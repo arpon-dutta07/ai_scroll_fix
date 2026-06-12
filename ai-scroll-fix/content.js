@@ -60,6 +60,25 @@
     document.head.appendChild(style);
   }
 
+  function normalizeText(str) {
+    if (!str) return '';
+    return str.toString()
+      .toLowerCase()
+      .replace(/[\u200B-\u200D\uFEFF]/g, '') // remove zero-width spaces
+      .replace(/[^a-z0-9\u0980-\u09fe]/g, '') // keep only alphanumeric and Bengali characters
+      .slice(0, 50);
+  }
+
+  function isElementValid(el, expectedText) {
+    if (!el || !document.body.contains(el)) return false;
+    try {
+      var txt = el.innerText || '';
+      return normalizeText(txt) === normalizeText(expectedText);
+    } catch(e) {
+      return false;
+    }
+  }
+
   function findScrollContainer() {
     // 1. Try ChatGPT's react-scroll-to-bottom
     var c = document.querySelector('[class*="react-scroll-to-bottom--"] [class*="react-scroll-to-bottom--"]');
@@ -174,8 +193,8 @@
   function resolveElement(m) {
     if (!m) return null;
     
-    // 1. Try the stored element reference first, check if it's still attached to the document
-    if (m.el && document.body.contains(m.el)) {
+    // 1. Try the stored element reference first, check if it's still attached to the document and matches
+    if (isElementValid(m.el, m.text)) {
       return m.el;
     }
     
@@ -183,21 +202,24 @@
     scanMessages();
     
     // 3. Find the element at the same index
-    if (allMessages[m.index] && allMessages[m.index].el && document.body.contains(allMessages[m.index].el)) {
+    if (allMessages[m.index] && isElementValid(allMessages[m.index].el, allMessages[m.index].text)) {
       return allMessages[m.index].el;
     }
     
-    // 4. Try text matching
+    // 4. Try text matching inside the scroll container only
+    var sc = findScrollContainer();
+    if (!sc) return m.el;
+
     var bestMatch = null;
-    var els = Array.from(document.querySelectorAll('div, p, span'));
+    var els = Array.from(sc.querySelectorAll('div, p, span'));
     var candidates = els.filter(function(el) {
       var txt = (el.innerText || '').trim();
       return txt.length >= 1 && (el.className || '').toString().toLowerCase().indexOf('button') === -1;
     });
     
     candidates.forEach(function(el) {
-      var txt = (el.innerText || '').trim().replace(/\n/g, ' ').replace(/\s+/g, ' ').slice(0, 80);
-      if (txt === m.text) {
+      var txt = el.innerText || '';
+      if (normalizeText(txt) === normalizeText(m.text)) {
         bestMatch = el;
       }
     });
@@ -232,10 +254,9 @@
         });
 
         var apiMessages = apiUserMessages.map(function(msg) {
-          var text = (msg.text || '').trim().replace(/\n/g, ' ').replace(/\s+/g, ' ').slice(0, 80);
           return {
             id: msg.uuid || '',
-            text: text,
+            text: msg.text || '',
             el: null
           };
         });
@@ -247,7 +268,7 @@
             var match = masterMessages.find(function(m) {
               return m.text === apiMsg.text || (m.id && apiMsg.id && m.id === apiMsg.id);
             });
-            if (match && match.el) {
+            if (match && isElementValid(match.el, match.text)) {
               apiMsg.el = match.el;
             }
           });
@@ -337,19 +358,23 @@
     // Map currently visible DOM elements to temporary message objects
     var V = found.map(function(el) {
       var id = el.getAttribute('data-message-id') || '';
-      var text = '';
-      try {
-        text = (el.innerText || '').trim().replace(/\n/g, ' ').replace(/\s+/g, ' ').slice(0, 80);
-      } catch(e) { text = 'Message'; }
-      return { id: id, text: text, el: el };
+      return { id: id, text: el.innerText || '', el: el };
+    });
+
+    // Clean up stale or reused element references immediately
+    masterMessages.forEach(function(m) {
+      if (m.el && !isElementValid(m.el, m.text)) {
+        m.el = null;
+      }
     });
 
     if (masterMessages.length === 0) {
       masterMessages = V;
     } else if (V.length > 0) {
       // Find alignment offset o between V and masterMessages
-      var bestOffset = 0;
-      var maxScore = -1;
+      var bestOffset = null;
+      var bestScore = 0;
+      var matchCount = 0;
 
       // 1. Try aligning with stable data-message-id
       var idMatchOffset = null;
@@ -367,31 +392,35 @@
 
       if (idMatchOffset !== null) {
         bestOffset = idMatchOffset;
-        maxScore = 1;
+        bestScore = 1;
+        matchCount = 1;
       } else {
-        // 2. Fallback to sequence text matching
+        // 2. Fallback to sequence text matching using normalized text
         for (var o = -V.length; o <= masterMessages.length; o++) {
           var score = 0;
           for (var i = 0; i < V.length; i++) {
             var j = i + o;
             if (j >= 0 && j < masterMessages.length) {
-              if (V[i].text === masterMessages[j].text) {
+              if (normalizeText(V[i].text) === normalizeText(masterMessages[j].text)) {
                 score++;
               }
             }
           }
-          if (score > maxScore) {
-            maxScore = score;
+          if (score > bestScore) {
+            bestScore = score;
             bestOffset = o;
+            matchCount = 1;
+          } else if (score === bestScore && score > 0) {
+            matchCount++;
           }
         }
       }
 
-      // If maxScore is 0, indicates thread switch or clear
-      if (maxScore === 0) {
+      // If bestScore is 0, indicates thread switch or clear
+      if (bestScore === 0) {
         masterMessages = V;
-      } else {
-        // Merge elements
+      } else if (bestOffset !== null && matchCount === 1) {
+        // Merge elements only if alignment is unique and confident
         var prepends = [];
         var appends = [];
 
@@ -476,7 +505,7 @@
     }
     
     var el = resolveElement(m);
-    if (el && document.body.contains(el)) {
+    if (el && isElementValid(el, m.text)) {
       scrollToElement(el);
       currentScrollTarget = null;
       return;
@@ -487,7 +516,7 @@
       var firstVisibleIdx = -1;
       var lastVisibleIdx = -1;
       for (var i = 0; i < allMessages.length; i++) {
-        if (allMessages[i].el && document.body.contains(allMessages[i].el)) {
+        if (isElementValid(allMessages[i].el, allMessages[i].text)) {
           if (firstVisibleIdx === -1) firstVisibleIdx = i;
           lastVisibleIdx = i;
         }
@@ -498,20 +527,20 @@
           if (m.index === 0 || m.index < allMessages.length * 0.1) {
             sc.scrollTop = 0;
           } else {
-            sc.scrollTop = Math.max(0, sc.scrollTop - (sc.clientHeight * 2));
+            sc.scrollTop = Math.max(0, sc.scrollTop - Math.round(sc.clientHeight * 0.8));
           }
         } else if (m.index > lastVisibleIdx) {
           if (m.index === allMessages.length - 1 || m.index > allMessages.length * 0.9) {
             sc.scrollTop = sc.scrollHeight;
           } else {
-            sc.scrollTop = Math.min(sc.scrollHeight, sc.scrollTop + (sc.clientHeight * 2));
+            sc.scrollTop = Math.min(sc.scrollHeight, sc.scrollTop + Math.round(sc.clientHeight * 0.8));
           }
         }
       } else {
         if (m.index < allMessages.length / 2) {
-          sc.scrollTop = Math.max(0, sc.scrollTop - (sc.clientHeight * 2));
+          sc.scrollTop = Math.max(0, sc.scrollTop - Math.round(sc.clientHeight * 0.8));
         } else {
-          sc.scrollTop = Math.min(sc.scrollHeight, sc.scrollTop + (sc.clientHeight * 2));
+          sc.scrollTop = Math.min(sc.scrollHeight, sc.scrollTop + Math.round(sc.clientHeight * 0.8));
         }
       }
     }

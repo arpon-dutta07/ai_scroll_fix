@@ -266,7 +266,7 @@
         } else {
           apiMessages.forEach(function(apiMsg) {
             var match = masterMessages.find(function(m) {
-              return m.text === apiMsg.text || (m.id && apiMsg.id && m.id === apiMsg.id);
+              return (m.id && apiMsg.id && m.id === apiMsg.id) || normalizeText(m.text) === normalizeText(apiMsg.text);
             });
             if (match && isElementValid(match.el, match.text)) {
               apiMsg.el = match.el;
@@ -282,7 +282,70 @@
         updateCount();
       })
       .catch(function(err) {
-        console.error('[AI Scroll Fix] API fetch error:', err);
+        console.error('[AI Scroll Fix] Claude API fetch error:', err);
+      });
+  }
+
+  function fetchChatGPTMessages() {
+    var match = window.location.pathname.match(/\/c\/([a-f0-9\-]+)/);
+    if (!match) return;
+    var chatUuid = match[1];
+
+    fetch('/backend-api/conversation/' + chatUuid)
+      .then(function(res) {
+        if (!res.ok) throw new Error('Failed to fetch ChatGPT conversation');
+        return res.json();
+      })
+      .then(function(data) {
+        if (!data || !data.mapping || !data.current_node) return;
+
+        // Trace back from leaf node to root
+        var path = [];
+        var curr = data.current_node;
+        while (curr && data.mapping[curr]) {
+          var node = data.mapping[curr];
+          path.push(node);
+          curr = node.parent;
+        }
+        path.reverse();
+
+        var apiUserMessages = [];
+        path.forEach(function(node) {
+          if (node.message && node.message.author && node.message.author.role === 'user') {
+            var parts = (node.message.content && node.message.content.parts) || [];
+            var text = parts.join(' ').trim();
+            if (text.length >= 1) {
+              apiUserMessages.push({
+                id: node.message.id || '',
+                text: text,
+                el: null
+              });
+            }
+          }
+        });
+
+        if (masterMessages.length === 0) {
+          masterMessages = apiUserMessages;
+        } else {
+          apiUserMessages.forEach(function(apiMsg) {
+            var match = masterMessages.find(function(m) {
+              return (m.id && apiMsg.id && m.id === apiMsg.id) || normalizeText(m.text) === normalizeText(apiMsg.text);
+            });
+            if (match && isElementValid(match.el, match.text)) {
+              apiMsg.el = match.el;
+            }
+          });
+          masterMessages = apiUserMessages;
+        }
+
+        allMessages = masterMessages.slice(0, 150).map(function(m, i) {
+          return { id: m.id, text: m.text, el: m.el, index: i };
+        });
+
+        updateCount();
+      })
+      .catch(function(err) {
+        console.error('[AI Scroll Fix] ChatGPT API fetch error:', err);
       });
   }
 
@@ -632,6 +695,22 @@
     panel.style.pointerEvents = 'auto';
   }
 
+  function initPlatform() {
+    masterMessages = [];
+    allMessages = [];
+    updateCount();
+    clearTimeout(window.__asfScanTimer);
+    
+    var hostname = window.location.hostname;
+    if (hostname.includes('claude.ai')) {
+      fetchClaudeMessages();
+    } else if (hostname.includes('chatgpt.com')) {
+      fetchChatGPTMessages();
+    } else {
+      scanMessages();
+    }
+  }
+
   function startObserver() {
     var observer = new MutationObserver(function(mutations) {
       var relevant = mutations.some(function(mut) {
@@ -669,13 +748,7 @@
     injectStyles();
     createBtn();
     createPanel();
-
-    if (window.location.hostname.includes('claude.ai')) {
-      fetchClaudeMessages();
-    } else {
-      scanMessages();
-    }
-
+    initPlatform();
     startObserver();
 
     btn.addEventListener('mouseenter', function() {
@@ -707,16 +780,7 @@
       startScrollListener();
       if (window.location.href !== lastUrl) {
         lastUrl = window.location.href;
-        masterMessages = [];
-        allMessages = [];
-        updateCount();
-        clearTimeout(window.__asfScanTimer);
-        
-        if (window.location.hostname.includes('claude.ai')) {
-          fetchClaudeMessages();
-        } else {
-          scanMessages();
-        }
+        initPlatform();
 
         setTimeout(scanMessages, 500);
         setTimeout(scanMessages, 1000);

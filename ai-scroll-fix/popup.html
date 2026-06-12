@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 260px;
+      padding: 16px;
+      background-color: #1e1e2e;
+      color: white;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    h2 {
+      background: linear-gradient(135deg, #a5b4fc, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-top: 0;
+      font-size: 20px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .stats-card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+      border: 1px solid #2e2e3e;
+      text-align: center;
+    }
+    .stats-count {
+      display: block;
+      font-size: 28px;
+      font-weight: 800;
+      color: #818cf8;
+    }
+    .stats-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .last-platform {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .platform-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid #2e2e3e;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .platform-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 12px;
+      color: #94a3b8;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .platform-list li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .check { color: #10b981; font-weight: bold; }
+    
+    .footer {
+      margin-top: 16px;
+      text-align: center;
+    }
+    #reset-btn {
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 11px;
+      text-decoration: underline;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    #reset-btn:hover { color: #f43f5e; }
+  </style>
+</head>
+<body>
+  <h2>🔧 AI Scroll Fix</h2>
+  
+  <div class="stats-card">
+    <span class="stats-count" id="ai-chat-count">0</span>
+    <span class="stats-label">AI Chats Tracked</span>
+  </div>
+
+  <div class="last-platform" id="last-platform">Last visited: None</div>
+
+  <div class="platform-card">
+    <ul class="platform-list">
+      <li><span class="check">&#10003;</span> ChatGPT</li>
+      <li><span class="check">&#10003;</span> Claude.ai</li>
+      <li><span class="check">&#10003;</span> Gemini</li>
+      <li><span class="check">&#10003;</span> Perplexity</li>
+      <li><span class="check">&#10003;</span> Copilot</li>
+      <li><span class="check">&#10003;</span> You.com</li>
+      <li><span class="check">&#10003;</span> DeepSeek</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    <button id="reset-btn">Reset Counter</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

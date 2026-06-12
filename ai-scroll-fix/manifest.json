@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "AI Scroll Fix - All Platforms",
+  "version": "1.0",
+  "description": "Smooth scrolling fix for ChatGPT, Claude, Gemini, Perplexity and more.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://www.perplexity.ai/*",
+    "https://copilot.microsoft.com/*",
+    "https://you.com/*",
+    "https://chat.deepseek.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://www.perplexity.ai/*",
+        "https://copilot.microsoft.com/*",
+        "https://you.com/*",
+        "https://chat.deepseek.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AI Scroll Fix"
+  }
+}

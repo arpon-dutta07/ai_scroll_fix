@@ -6,7 +6,10 @@
   var panel = null;
   var isOverBtn = false;
   var isOverPanel = false;
+  var masterMessages = [];
   var allMessages = [];
+  var currentScrollTarget = null;
+  var scrollTimer = null;
 
   function getTheme() {
     var bg = getComputedStyle(document.body).backgroundColor;
@@ -23,16 +26,83 @@
     return { bg: 'linear-gradient(135deg,#2563eb,#1d4ed8)', shadow: '0 0 20px rgba(37,99,235,0.7)' };
   }
 
+  function injectStyles() {
+    var style = document.createElement('style');
+    style.id = 'asf-styles';
+    style.innerHTML = `
+      /* Hide native ChatGPT timeline ticks, scroll markers, or conflicting scroll extensions */
+      .chatgpt-timeline-ticks, 
+      .scroll-marker, 
+      [class*="TimelineTick"], 
+      [class*="timeline-tick"],
+      [class*="scroll-marker"],
+      [class*="TimelineRail"],
+      [class*="scroll-nav"] {
+        display: none !important;
+      }
+      
+      /* Make scrollbar look premium and modern */
+      ::-webkit-scrollbar {
+        width: 8px !important;
+        height: 8px !important;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent !important;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-radius: 4px !important;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3) !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function findScrollContainer() {
+    // 1. Try ChatGPT's react-scroll-to-bottom
+    var c = document.querySelector('[class*="react-scroll-to-bottom--"] [class*="react-scroll-to-bottom--"]');
+    if (c) return c;
+    c = document.querySelector('[class*="react-scroll-to-bottom--"]');
+    if (c) return c;
+
+    // 2. Find all scrollable containers, excluding the sidebar
     var containers = Array.from(document.querySelectorAll('div, main, section'));
+    var bestSc = null;
+    var maxArea = -1;
+
     for (var i = 0; i < containers.length; i++) {
-      var c = containers[i];
-      var oy = getComputedStyle(c).overflowY;
-      if ((oy === 'auto' || oy === 'scroll') && c.scrollHeight > c.clientHeight && c.clientHeight > 300) {
-        return c;
+      var sc = containers[i];
+      
+      // Skip if inside navigation or sidebar elements
+      var parent = sc;
+      var isSidebar = false;
+      while (parent) {
+        if (parent.tagName.toLowerCase() === 'nav') {
+          isSidebar = true;
+          break;
+        }
+        var cls = (parent.className || '').toString().toLowerCase();
+        var id = (parent.id || '').toString().toLowerCase();
+        if (cls.indexOf('sidebar') !== -1 || cls.indexOf('navigation') !== -1 || cls.indexOf('nav-') !== -1 || id.indexOf('sidebar') !== -1) {
+          isSidebar = true;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+      if (isSidebar) continue;
+
+      var oy = getComputedStyle(sc).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && sc.scrollHeight > sc.clientHeight && sc.clientHeight > 300) {
+        var area = sc.clientWidth * sc.clientHeight;
+        if (area > maxArea) {
+          maxArea = area;
+          bestSc = sc;
+        }
       }
     }
-    return null;
+    return bestSc;
   }
 
   function heuristicScan() {
@@ -109,7 +179,7 @@
       return m.el;
     }
     
-    // 2. If it's detached, scan the page again to find all current user messages
+    // 2. Scan the page to update refs
     scanMessages();
     
     // 3. Find the element at the same index
@@ -117,17 +187,16 @@
       return allMessages[m.index].el;
     }
     
-    // 4. If index mismatch, try to find by text matching
+    // 4. Try text matching
     var bestMatch = null;
     var els = Array.from(document.querySelectorAll('div, p, span'));
-    
     var candidates = els.filter(function(el) {
       var txt = (el.innerText || '').trim();
       return txt.length >= 1 && (el.className || '').toString().toLowerCase().indexOf('button') === -1;
     });
     
     candidates.forEach(function(el) {
-      var txt = (el.innerText || '').trim().replace(/\n/g, ' ').replace(/\s+/g, ' ').slice(0, 50);
+      var txt = (el.innerText || '').trim().replace(/\n/g, ' ').replace(/\s+/g, ' ').slice(0, 80);
       if (txt === m.text) {
         bestMatch = el;
       }
@@ -136,10 +205,69 @@
     return bestMatch || m.el;
   }
 
+  function fetchClaudeMessages() {
+    var match = window.location.pathname.match(/\/chat\/([a-f0-9\-]+)/);
+    if (!match) return;
+    var chatUuid = match[1];
+
+    fetch('/api/organizations')
+      .then(function(res) {
+        if (!res.ok) throw new Error('Failed to fetch orgs');
+        return res.json();
+      })
+      .then(function(orgs) {
+        if (!orgs || orgs.length === 0) throw new Error('No orgs found');
+        var orgUuid = orgs[0].uuid;
+        return fetch('/api/organizations/' + orgUuid + '/chat_conversations/' + chatUuid);
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error('Failed to fetch conversation');
+        return res.json();
+      })
+      .then(function(data) {
+        if (!data || !data.chat_messages) return;
+
+        var apiUserMessages = data.chat_messages.filter(function(msg) {
+          return msg.sender === 'human';
+        });
+
+        var apiMessages = apiUserMessages.map(function(msg) {
+          var text = (msg.text || '').trim().replace(/\n/g, ' ').replace(/\s+/g, ' ').slice(0, 80);
+          return {
+            id: msg.uuid || '',
+            text: text,
+            el: null
+          };
+        });
+
+        if (masterMessages.length === 0) {
+          masterMessages = apiMessages;
+        } else {
+          apiMessages.forEach(function(apiMsg) {
+            var match = masterMessages.find(function(m) {
+              return m.text === apiMsg.text || (m.id && apiMsg.id && m.id === apiMsg.id);
+            });
+            if (match && match.el) {
+              apiMsg.el = match.el;
+            }
+          });
+          masterMessages = apiMessages;
+        }
+
+        allMessages = masterMessages.slice(0, 150).map(function(m, i) {
+          return { id: m.id, text: m.text, el: m.el, index: i };
+        });
+
+        updateCount();
+      })
+      .catch(function(err) {
+        console.error('[AI Scroll Fix] API fetch error:', err);
+      });
+  }
+
   function scanMessages() {
     var hostname = window.location.hostname;
     var found = [];
-
     var selectorGroups = [];
 
     if (hostname.includes('claude.ai')) {
@@ -189,7 +317,7 @@
       } catch(e) {}
     }
 
-    // Fallback heuristic scan if nothing found or on DeepSeek
+    // Fallback heuristic scan if nothing found or on DeepSeek/Claude virtualization
     if (found.length === 0 || hostname.includes('deepseek.com')) {
       try {
         var hEls = heuristicScan();
@@ -206,12 +334,94 @@
       });
     } catch(e) {}
 
-    allMessages = found.slice(0, 100).map(function(el, i) {
+    // Map currently visible DOM elements to temporary message objects
+    var V = found.map(function(el) {
+      var id = el.getAttribute('data-message-id') || '';
       var text = '';
       try {
-        text = (el.innerText || '').trim().replace(/\n/g, ' ').replace(/\s+/g, ' ').slice(0, 50);
-      } catch(e) { text = 'Message ' + (i + 1); }
-      return { el: el, text: text, index: i };
+        text = (el.innerText || '').trim().replace(/\n/g, ' ').replace(/\s+/g, ' ').slice(0, 80);
+      } catch(e) { text = 'Message'; }
+      return { id: id, text: text, el: el };
+    });
+
+    if (masterMessages.length === 0) {
+      masterMessages = V;
+    } else if (V.length > 0) {
+      // Find alignment offset o between V and masterMessages
+      var bestOffset = 0;
+      var maxScore = -1;
+
+      // 1. Try aligning with stable data-message-id
+      var idMatchOffset = null;
+      for (var i = 0; i < V.length; i++) {
+        if (V[i].id) {
+          for (var j = 0; j < masterMessages.length; j++) {
+            if (masterMessages[j].id === V[i].id) {
+              idMatchOffset = j - i;
+              break;
+            }
+          }
+        }
+        if (idMatchOffset !== null) break;
+      }
+
+      if (idMatchOffset !== null) {
+        bestOffset = idMatchOffset;
+        maxScore = 1;
+      } else {
+        // 2. Fallback to sequence text matching
+        for (var o = -V.length; o <= masterMessages.length; o++) {
+          var score = 0;
+          for (var i = 0; i < V.length; i++) {
+            var j = i + o;
+            if (j >= 0 && j < masterMessages.length) {
+              if (V[i].text === masterMessages[j].text) {
+                score++;
+              }
+            }
+          }
+          if (score > maxScore) {
+            maxScore = score;
+            bestOffset = o;
+          }
+        }
+      }
+
+      // If maxScore is 0, indicates thread switch or clear
+      if (maxScore === 0) {
+        masterMessages = V;
+      } else {
+        // Merge elements
+        var prepends = [];
+        var appends = [];
+
+        for (var i = 0; i < V.length; i++) {
+          var j = i + bestOffset;
+          if (j < 0) {
+            prepends.push({ id: V[i].id, text: V[i].text, el: V[i].el });
+          } else if (j >= masterMessages.length) {
+            appends.push({ id: V[i].id, text: V[i].text, el: V[i].el });
+          } else {
+            // Overlap: update DOM ref and text
+            masterMessages[j].el = V[i].el;
+            masterMessages[j].text = V[i].text;
+            if (V[i].id && !masterMessages[j].id) {
+              masterMessages[j].id = V[i].id;
+            }
+          }
+        }
+
+        if (prepends.length > 0) {
+          masterMessages = prepends.concat(masterMessages);
+        }
+        if (appends.length > 0) {
+          masterMessages = masterMessages.concat(appends);
+        }
+      }
+    }
+
+    allMessages = masterMessages.slice(0, 150).map(function(m, i) {
+      return { id: m.id, text: m.text, el: m.el, index: i };
     });
 
     updateCount();
@@ -252,6 +462,63 @@
     } catch(e) {
       try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e2) {}
     }
+  }
+
+  function scrollToVirtualMessage(m, attempt) {
+    if (!attempt) {
+      attempt = 0;
+      currentScrollTarget = m;
+    }
+    if (currentScrollTarget !== m) return;
+    if (attempt > 40) {
+      currentScrollTarget = null;
+      return; // Cap after 4 seconds
+    }
+    
+    var el = resolveElement(m);
+    if (el && document.body.contains(el)) {
+      scrollToElement(el);
+      currentScrollTarget = null;
+      return;
+    }
+    
+    var sc = findScrollContainer();
+    if (sc) {
+      var firstVisibleIdx = -1;
+      var lastVisibleIdx = -1;
+      for (var i = 0; i < allMessages.length; i++) {
+        if (allMessages[i].el && document.body.contains(allMessages[i].el)) {
+          if (firstVisibleIdx === -1) firstVisibleIdx = i;
+          lastVisibleIdx = i;
+        }
+      }
+      
+      if (firstVisibleIdx !== -1) {
+        if (m.index < firstVisibleIdx) {
+          if (m.index === 0 || m.index < allMessages.length * 0.1) {
+            sc.scrollTop = 0;
+          } else {
+            sc.scrollTop = Math.max(0, sc.scrollTop - (sc.clientHeight * 2));
+          }
+        } else if (m.index > lastVisibleIdx) {
+          if (m.index === allMessages.length - 1 || m.index > allMessages.length * 0.9) {
+            sc.scrollTop = sc.scrollHeight;
+          } else {
+            sc.scrollTop = Math.min(sc.scrollHeight, sc.scrollTop + (sc.clientHeight * 2));
+          }
+        }
+      } else {
+        if (m.index < allMessages.length / 2) {
+          sc.scrollTop = Math.max(0, sc.scrollTop - (sc.clientHeight * 2));
+        } else {
+          sc.scrollTop = Math.min(sc.scrollHeight, sc.scrollTop + (sc.clientHeight * 2));
+        }
+      }
+    }
+    
+    setTimeout(function() {
+      scrollToVirtualMessage(m, attempt + 1);
+    }, 100);
   }
 
   function createBtn() {
@@ -304,8 +571,7 @@
             isOverPanel = false;
             hidePanel();
             setTimeout(function() {
-              var targetEl = resolveElement(item);
-              scrollToElement(targetEl);
+              scrollToVirtualMessage(item);
             }, 350);
           });
           
@@ -313,7 +579,7 @@
             var targetEl = resolveElement(item);
             if (targetEl) {
               targetEl.setAttribute('data-asf-highlight', 'true');
-              targetEl.style.outline = '2px dashed #e11d48';
+              targetEl.style.outline = '2px dashed ' + (getTheme() === 'dark' ? '#e11d48' : '#2563eb');
               targetEl.style.outlineOffset = '2px';
             }
           });
@@ -357,10 +623,30 @@
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 
+  function startScrollListener() {
+    var sc = findScrollContainer();
+    if (sc) {
+      sc.removeEventListener('scroll', handleScroll);
+      sc.addEventListener('scroll', handleScroll);
+    }
+  }
+
+  function handleScroll() {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(scanMessages, 250);
+  }
+
   setTimeout(function() {
+    injectStyles();
     createBtn();
     createPanel();
-    scanMessages();
+
+    if (window.location.hostname.includes('claude.ai')) {
+      fetchClaudeMessages();
+    } else {
+      scanMessages();
+    }
+
     startObserver();
 
     btn.addEventListener('mouseenter', function() {
@@ -389,12 +675,20 @@
     // Setup URL polling to detect SPA transitions
     var lastUrl = window.location.href;
     setInterval(function() {
+      startScrollListener();
       if (window.location.href !== lastUrl) {
         lastUrl = window.location.href;
+        masterMessages = [];
         allMessages = [];
         updateCount();
         clearTimeout(window.__asfScanTimer);
-        scanMessages();
+        
+        if (window.location.hostname.includes('claude.ai')) {
+          fetchClaudeMessages();
+        } else {
+          scanMessages();
+        }
+
         setTimeout(scanMessages, 500);
         setTimeout(scanMessages, 1000);
         setTimeout(scanMessages, 2000);

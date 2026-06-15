@@ -91,6 +91,100 @@ function App() {
     setActiveFaqIndex(activeFaqIndex === index ? null : index);
   };
 
+  // Interactive Simulator States
+  const [isProtectionActive, setIsProtectionActive] = useState(true)
+  const [isWhitelistedChatGPT, setIsWhitelistedChatGPT] = useState(true)
+  const [isWhitelistedClaude, setIsWhitelistedClaude] = useState(true)
+  const [isWhitelistedGemini, setIsWhitelistedGemini] = useState(true)
+  const [isWhitelistedDeepSeek, setIsWhitelistedDeepSeek] = useState(false)
+  const [isSimStreaming, setIsSimStreaming] = useState(false)
+  const [simStreamedLines, setSimStreamedLines] = useState([])
+  const [simJumpsCount, setSimJumpsCount] = useState(1429)
+  const [simScrollJitter, setSimScrollJitter] = useState(false)
+
+  const chatContainerRef = useRef(null)
+
+  const fullCodeLines = [
+    "// Implementing smooth scroll anchors",
+    "const useScrollAnchor = (containerRef) => {",
+    "  const lastScrollHeight = useRef(0);",
+    "  const lastScrollTop = useRef(0);",
+    "",
+    "  useEffect(() => {",
+    "    const container = containerRef.current;",
+    "    if (!container) return;",
+    "",
+    "    const handleMutation = () => {",
+    "      const { scrollHeight, scrollTop } = container;",
+    "      const heightDiff = scrollHeight - lastScrollHeight.current;",
+    "",
+    "      if (heightDiff > 0 && scrollTop > 0) {",
+    "        // Locking scroll position automatically!",
+    "        container.scrollTop = scrollTop + heightDiff;",
+    "      }",
+    "      lastScrollHeight.current = scrollHeight;",
+    "    };",
+    "",
+    "    const observer = new MutationObserver(handleMutation);",
+    "    observer.observe(container, { childList: true, subtree: true });",
+    "    return () => observer.disconnect();",
+    "  }, [containerRef]);",
+    "};",
+    "// Fix applied successfully! Zero jumps."
+  ]
+
+  // Stream Simulation Effect
+  useEffect(() => {
+    let timer;
+    if (isSimStreaming) {
+      setSimStreamedLines([]);
+      setSimScrollJitter(false);
+      let lineIdx = 0;
+      
+      timer = setInterval(() => {
+        if (lineIdx < fullCodeLines.length) {
+          const newLine = fullCodeLines[lineIdx];
+          setSimStreamedLines(prev => [...prev, newLine]);
+          
+          // Trigger layout shifts if protection is off
+          if (!isProtectionActive) {
+            setSimScrollJitter(true);
+            setSimJumpsCount(prev => prev + 1);
+            // Reset jitter after a brief moment to simulate snapping jumps
+            setTimeout(() => setSimScrollJitter(false), 120);
+          } else {
+            setSimScrollJitter(false);
+          }
+
+          lineIdx++;
+        } else {
+          setIsSimStreaming(false);
+          clearInterval(timer);
+        }
+      }, 300); // 300ms typewriter delay
+    } else {
+      // Default initial lines
+      setSimStreamedLines(fullCodeLines.slice(0, 4));
+    }
+    return () => clearInterval(timer);
+  }, [isSimStreaming, isProtectionActive]);
+
+  // Keep chat container scrolled to bottom (or locked) when streaming
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      const container = chatContainerRef.current;
+      if (isProtectionActive) {
+        container.scrollTop = container.scrollHeight;
+      } else {
+        if (isSimStreaming) {
+          container.scrollTop = container.scrollHeight - 100 - (Math.random() * 80);
+        } else {
+          container.scrollTop = container.scrollHeight;
+        }
+      }
+    }
+  }, [simStreamedLines, isProtectionActive, isSimStreaming]);
+
   // Refs for scroll-trigger animations
   const stepsRef = useRef(null)
   const isStepsInView = useInView(stepsRef, { once: true, amount: 0.2 })
@@ -485,89 +579,177 @@ function App() {
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="section-header">
-          <span className="section-tag">Interactive Preview</span>
+          <span className="section-tag">Interactive Simulator</span>
           <h2 className="section-title">See The Difference</h2>
           <p className="section-subtitle">
-            Experience the scroll recovery feature. The extension injects indicators and panel shortcuts for easy layout settings.
+            Play with the control panel below. Toggle the extension on or off to simulate scroll-jumps in real-time as the AI streams code blocks.
           </p>
         </div>
 
         <div className="demo-container">
-          <div className="demo-mockup">
+          {/* LEFT PANEL: Chat Window Simulator */}
+          <div className="demo-mockup chat-simulator-window">
             <div className="mockup-header">
               <div style={{ display: 'flex', gap: '8px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e11d48' }}></div>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }}></div>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e' }}></div>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ff5f56' }}></div>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ffbd2e' }}></div>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#27c93f' }}></div>
               </div>
-              <div className="mockup-url-bar">extension-controls.local</div>
+              <div className="mockup-url-bar">
+                <span>🔒</span> claude.ai/chat/scroll-test
+              </div>
             </div>
-            <div className="mockup-body">
+            
+            <div 
+              ref={chatContainerRef}
+              className={`mockup-body chat-simulator-body ${simScrollJitter ? 'vibrate-jump' : ''}`}
+            >
+              {/* Scroll Anchor Line Overlay when active */}
+              {isProtectionActive && isSimStreaming && (
+                <div className="scroll-lock-laser">
+                  <div className="laser-line"></div>
+                  <div className="laser-badge">SCROLL ANCHOR: LOCKED</div>
+                </div>
+              )}
+              
               <div className="mockup-chat-bubble user">
-                Is AI Scroll Fix going to slow down my Chrome tabs?
+                Write a React hook to handle scroll anchoring, please!
               </div>
-              <div className="mockup-chat-bubble ai">
-                Absolutely not. The core listener only triggers on DOM updates, taking less than 1ms to recalculate layout anchors. Safe, secure, and extremely light...
-                <span className="blinking-cursor"></span>
+              
+              <div className="mockup-chat-bubble ai chat-stream-bubble">
+                <p style={{ marginBottom: '12px' }}>Here is a pure React implementation that listens to layout mutations and automatically locks scroll offsets:</p>
+                
+                {/* Code Window */}
+                <div className="mock-code-editor">
+                  <div className="editor-header">
+                    <span className="editor-lang">useScrollAnchor.js</span>
+                    <span className="editor-copy">Copy code</span>
+                  </div>
+                  <div className="editor-code-container">
+                    <div className="line-numbers">
+                      {simStreamedLines.map((_, i) => (
+                        <div key={i} className="line-num">{i + 1}</div>
+                      ))}
+                    </div>
+                    <pre className="code-content">
+                      {simStreamedLines.map((line, i) => (
+                        <code key={i} className="code-line">
+                          {line || "\u00A0"}
+                        </code>
+                      ))}
+                      {isSimStreaming && <span className="blinking-cursor editor-cursor"></span>}
+                    </pre>
+                  </div>
+                </div>
+                
+                {!isSimStreaming && simStreamedLines.length === fullCodeLines.length && (
+                  <p style={{ marginTop: '12px', color: '#4ade80', fontSize: '12px', fontWeight: '600' }}>✓ Stream Finished. Scroll Anchored successfully.</p>
+                )}
               </div>
-              <button className="mockup-float-btn">
-                <span style={{ fontWeight: '700', fontSize: '15px' }}>Active</span>
-                <span style={{ fontSize: '8px', opacity: 0.8, textTransform: 'uppercase' }}>scroll lock</span>
+            </div>
+            
+            <div className="simulator-controls-overlay">
+              <button 
+                onClick={() => setIsSimStreaming(true)}
+                disabled={isSimStreaming}
+                className="simulator-action-btn spring-btn"
+              >
+                {isSimStreaming ? "Streaming Code..." : "⚡ Simulate AI Stream"}
               </button>
             </div>
           </div>
 
-          <div className="demo-mockup demo-mockup-delay">
+          {/* RIGHT PANEL: Extension Control board */}
+          <div className="demo-mockup extension-popup-window">
             <div className="mockup-header">
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e11d48' }}></div>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }}></div>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e' }}></div>
+              <div className="extension-badge-header">
+                <div className="logo-dot small"></div>
+                <span>Chrome Extension Panel</span>
               </div>
-              <div className="mockup-url-bar">history-panel.local</div>
             </div>
-            <div className="mockup-body">
-              <div className="chat-history-list">
-                <motion.div
-                  className="chat-history-item"
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <span>#1 How do I fix scrolling jumps in ChatGPT?</span>
-                  <span>↗</span>
-                </motion.div>
-                <motion.div
-                  className="chat-history-item"
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <span>#2 Can you write a CSS fix for scroll anchoring?</span>
-                  <span>↗</span>
-                </motion.div>
-                <motion.div
-                  className="chat-history-item"
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <span>#3 What is the best browser for Chrome extensions?</span>
-                  <span>↗</span>
-                </motion.div>
-                <motion.div
-                  className="chat-history-item"
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.4 }}
-                >
-                  <span>#4 Explain quantum computing scroll lock algorithms.</span>
-                  <span>↗</span>
-                </motion.div>
+            
+            <div className="mockup-body extension-body">
+              {/* MAIN TOGGLE BOARD */}
+              <div className="extension-card-main">
+                <div className="extension-logo-row">
+                  <div className="logo-wrapper">
+                    <div className="logo-dot"></div>
+                    <span className="logo-text-large">AI Scroll Fix</span>
+                  </div>
+                  <div className="power-switch-container">
+                    <button 
+                      onClick={() => setIsProtectionActive(!isProtectionActive)}
+                      className={`power-switch-btn spring-btn ${isProtectionActive ? 'active' : 'paused'}`}
+                    >
+                      <div className="power-icon">⏻</div>
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="protection-status-display">
+                  <span className={`status-pill ${isProtectionActive ? 'status-green' : 'status-red'}`}>
+                    {isProtectionActive ? "PROTECTION: ACTIVE" : "PROTECTION: PAUSED"}
+                  </span>
+                </div>
+              </div>
+
+              {/* DOMAINS WHITELIST */}
+              <div className="extension-whitelist-card">
+                <div className="whitelist-title">Active Domains</div>
+                <div className="whitelist-items">
+                  <div className="whitelist-item">
+                    <span className="domain-name">chatgpt.com</span>
+                    <input 
+                      type="checkbox" 
+                      checked={isWhitelistedChatGPT} 
+                      onChange={() => setIsWhitelistedChatGPT(!isWhitelistedChatGPT)}
+                      className="whitelist-toggle"
+                    />
+                  </div>
+                  <div className="whitelist-item">
+                    <span className="domain-name">claude.ai</span>
+                    <input 
+                      type="checkbox" 
+                      checked={isWhitelistedClaude} 
+                      onChange={() => setIsWhitelistedClaude(!isWhitelistedClaude)}
+                      className="whitelist-toggle"
+                    />
+                  </div>
+                  <div className="whitelist-item">
+                    <span className="domain-name">gemini.google.com</span>
+                    <input 
+                      type="checkbox" 
+                      checked={isWhitelistedGemini} 
+                      onChange={() => setIsWhitelistedGemini(!isWhitelistedGemini)}
+                      className="whitelist-toggle"
+                    />
+                  </div>
+                  <div className="whitelist-item">
+                    <span className="domain-name">chat.deepseek.com</span>
+                    <input 
+                      type="checkbox" 
+                      checked={isWhitelistedDeepSeek} 
+                      onChange={() => setIsWhitelistedDeepSeek(!isWhitelistedDeepSeek)}
+                      className="whitelist-toggle"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* STATS ROW */}
+              <div className="extension-stats-grid">
+                <div className="stat-card">
+                  <span className="stat-label">Jumps Prevented</span>
+                  <span className="stat-value text-glow-red">{simJumpsCount}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">Response Lag</span>
+                  <span className="stat-value text-glow-green">&lt; 1ms</span>
+                </div>
+              </div>
+              
+              <div className="extension-footer-tips">
+                <span>💡 Tip: Pause the protection and click "Simulate AI Stream" to see how the viewport jumps erratically without AI Scroll Fix.</span>
               </div>
             </div>
           </div>

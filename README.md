@@ -1,4 +1,7 @@
 # 🔧 AI Scroll Fix — All Platforms
+<img width="1536" height="715" alt="image" src="https://github.com/user-attachments/assets/a4050866-ffec-4f2d-b0d8-f07d9a1a6999" />
+<img width="1279" height="722" alt="image" src="https://github.com/user-attachments/assets/6eb66e4b-2a9e-4b22-bdd3-8303a3ffd83c" />
+
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-v1.2.0-red?style=for-the-badge&logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore)
 [![Built with React](https://img.shields.io/badge/Built_with-React_19-blue?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)

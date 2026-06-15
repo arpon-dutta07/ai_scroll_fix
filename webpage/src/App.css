@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
 /* Reset */
 * {
@@ -10,8 +10,12 @@
 body {
   background: #0a0a0f;
   color: white;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Outfit', sans-serif;
   overflow-x: hidden;
+}
+
+h1, h2, h3, .section-title, .hero-heading, .footer-heading, .navbar-logo, .bento-title, .counter-number, .sidebar-title, .btn-primary-shine, .btn-hero-ghost, .marquee-item, .asf-header-title, .step-title, .step-number-badge, .logo-text-large {
+  font-family: 'Syne', sans-serif !important;
 }
 
 #root {
@@ -543,6 +547,16 @@ a, button, select, input, textarea {
   align-self: flex-start;
   color: rgba(255, 255, 255, 0.9);
   border-bottom-left-radius: 2px;
+  transition: all 0.4s ease;
+  border: 1px solid transparent;
+}
+
+.mockup-chat-bubble.user.hero-asf-highlighted {
+  outline: 3px solid #ff3366;
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.6);
+  background-color: rgba(255, 51, 102, 0.15);
+  border-color: rgba(255, 51, 102, 0.3);
+  transform: scale(1.02);
 }
 
 .mockup-chat-bubble.ai {
@@ -1713,7 +1727,14 @@ a, button, select, input, textarea {
   border-color: rgba(225, 29, 72, 0.15);
 }
 
-.chat-simulator-body {
+/* Container wrappers to allow sticky elements like buttons/panels */
+.chat-simulator-container-relative, .hero-chat-container-relative {
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.chat-simulator-scroll-area {
   height: 480px;
   overflow-y: auto;
   scroll-behavior: smooth;
@@ -1726,21 +1747,21 @@ a, button, select, input, textarea {
   background-color: #0b0b10;
 }
 
-.chat-simulator-body::-webkit-scrollbar {
+.chat-simulator-scroll-area::-webkit-scrollbar {
   width: 6px;
 }
 
-.chat-simulator-body::-webkit-scrollbar-thumb {
+.chat-simulator-scroll-area::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 
-.chat-simulator-body::-webkit-scrollbar-thumb:hover {
+.chat-simulator-scroll-area::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
 /* Chat bubbles inside simulator */
-.chat-simulator-body .mockup-chat-bubble {
+.chat-simulator-scroll-area .mockup-chat-bubble {
   padding: 14px 18px;
   border-radius: 16px;
   max-width: 85%;
@@ -1752,7 +1773,7 @@ a, button, select, input, textarea {
   border: 1px solid transparent;
 }
 
-.chat-simulator-body .mockup-chat-bubble.user {
+.chat-simulator-scroll-area .mockup-chat-bubble.user {
   background: rgba(255, 255, 255, 0.04);
   align-self: flex-end;
   color: rgba(255, 255, 255, 0.95);
@@ -1760,7 +1781,7 @@ a, button, select, input, textarea {
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.chat-simulator-body .mockup-chat-bubble.ai {
+.chat-simulator-scroll-area .mockup-chat-bubble.ai {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.04);
   align-self: flex-start;
@@ -1769,7 +1790,7 @@ a, button, select, input, textarea {
 }
 
 /* Mock Editor Block */
-.chat-simulator-body .mock-code-editor {
+.chat-simulator-scroll-area .mock-code-editor {
   background: #06060a;
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
@@ -1779,7 +1800,7 @@ a, button, select, input, textarea {
   text-align: left;
 }
 
-.chat-simulator-body .editor-header {
+.chat-simulator-scroll-area .editor-header {
   background: #111119;
   padding: 10px 16px;
   display: flex;
@@ -1788,24 +1809,24 @@ a, button, select, input, textarea {
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.chat-simulator-body .editor-lang {
+.chat-simulator-scroll-area .editor-lang {
   font-size: 11px;
   color: #6b6b7a;
 }
 
-.chat-simulator-body .editor-copy {
+.chat-simulator-scroll-area .editor-copy {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.3);
 }
 
-.chat-simulator-body .editor-code-container {
+.chat-simulator-scroll-area .editor-code-container {
   display: flex;
   padding: 16px;
   font-size: 12px;
   line-height: 1.6;
 }
 
-.chat-simulator-body .code-content {
+.chat-simulator-scroll-area .code-content {
   flex: 1;
   color: #93c5fd;
   margin: 0;
@@ -1814,7 +1835,7 @@ a, button, select, input, textarea {
 }
 
 /* Injected glowing outline and background highlight states for scrolled prompts */
-.chat-simulator-body .mockup-chat-bubble.user.asf-highlighted {
+.chat-simulator-scroll-area .mockup-chat-bubble.user.asf-highlighted {
   outline: 3px solid #ff3366;
   box-shadow: 0 0 20px rgba(255, 51, 102, 0.6);
   background-color: rgba(255, 51, 102, 0.15) !important;
@@ -1823,7 +1844,7 @@ a, button, select, input, textarea {
 }
 
 /* INJECTED FLOATING BUTTON (Matching content.js style, positioned absolute in mock chat) */
-#asf-btn {
+#asf-btn, #hero-asf-btn {
   position: absolute;
   bottom: 24px;
   right: 24px;
@@ -1844,16 +1865,16 @@ a, button, select, input, textarea {
   transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
 }
 
-#asf-btn:hover {
+#asf-btn:hover, #hero-asf-btn:hover {
   transform: scale(1.08) translateY(-3px);
   box-shadow: 0 12px 30px rgba(225, 29, 72, 0.4);
 }
 
-#asf-btn:active {
+#asf-btn:active, #hero-asf-btn:active {
   transform: scale(0.95);
 }
 
-#asf-num {
+#asf-num, #hero-asf-num {
   font-size: 24px;
   font-weight: 800;
   color: #ffffff;
@@ -1861,7 +1882,7 @@ a, button, select, input, textarea {
   text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-#asf-label {
+#asf-label, #hero-asf-label {
   font-size: 9px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.85);
@@ -1871,7 +1892,7 @@ a, button, select, input, textarea {
 }
 
 /* Glassmorphism Navigation Panel */
-#asf-panel {
+#asf-panel, #hero-asf-panel {
   position: absolute;
   right: 96px;
   bottom: 24px;
@@ -1894,7 +1915,7 @@ a, button, select, input, textarea {
   flex-direction: column;
 }
 
-#asf-panel.show {
+#asf-panel.show, #hero-asf-panel.show {
   transform: scale(1) translateY(0);
   opacity: 1;
   pointer-events: auto;
@@ -2009,6 +2030,119 @@ a, button, select, input, textarea {
 @keyframes asf-slide-in {
   0% { opacity: 0; transform: translateY(12px) scale(0.95); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* HERO SIMULATOR OVERLAYS */
+.hero-chat-simulator {
+  width: 480px;
+  max-width: 100%;
+}
+
+.hero-chat-simulator-scroll-area {
+  height: 320px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  padding-bottom: 95px;
+  background-color: #0b0b10;
+  text-align: left;
+}
+
+.hero-chat-simulator-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.hero-chat-simulator-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.hero-chat-simulator-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.hero-chat-simulator-scroll-area .mockup-chat-bubble {
+  padding: 12px 16px;
+  border-radius: 14px;
+  max-width: 85%;
+  font-size: 13px;
+  line-height: 1.45;
+  position: relative;
+  z-index: 2;
+  transition: all 0.4s ease;
+  border: 1px solid transparent;
+}
+
+.hero-chat-simulator-scroll-area .mockup-chat-bubble.user {
+  background: rgba(255, 255, 255, 0.04);
+  align-self: flex-end;
+  color: rgba(255, 255, 255, 0.95);
+  border-bottom-right-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hero-chat-simulator-scroll-area .mockup-chat-bubble.ai {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  align-self: flex-start;
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom-left-radius: 4px;
+}
+
+.hero-chat-simulator-scroll-area .mock-code-editor {
+  background: #06060a;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: monospace;
+  margin-top: 12px;
+  text-align: left;
+}
+
+.hero-chat-simulator-scroll-area .editor-header {
+  background: #111119;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.hero-chat-simulator-scroll-area .editor-lang {
+  font-size: 11px;
+  color: #6b6b7a;
+}
+
+.hero-chat-simulator-scroll-area .editor-copy {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.hero-chat-simulator-scroll-area .editor-code-container {
+  display: flex;
+  padding: 16px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.hero-chat-simulator-scroll-area .code-content {
+  flex: 1;
+  color: #93c5fd;
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: monospace;
+}
+
+.hero-chat-simulator-scroll-area .mockup-chat-bubble.user.hero-asf-highlighted {
+  outline: 3px solid #ff3366;
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.6);
+  background-color: rgba(255, 51, 102, 0.15) !important;
+  border-color: rgba(255, 51, 102, 0.3);
+  transform: scale(1.02);
 }
 
 /* EXTENSION POPUP WINDOW (RIGHT) */

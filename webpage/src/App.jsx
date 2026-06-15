@@ -128,6 +128,30 @@ function App() {
   // Bento Card lock switch state
   const [isLockActive, setIsLockActive] = useState(true)
 
+  // Hero mockup simulation states (matching simulator behavior)
+  const [heroShowNavPanel, setHeroShowNavPanel] = useState(false)
+  const [heroHighlightedPromptIndex, setHeroHighlightedPromptIndex] = useState(null)
+  const heroChatContainerRef = useRef(null)
+
+  const handleHeroScrollToPrompt = (index) => {
+    if (heroChatContainerRef.current) {
+      const container = heroChatContainerRef.current;
+      const targetEl = container.querySelector(`[data-hero-prompt-idx="${index}"]`);
+      if (targetEl) {
+        // Smoothly scroll the container to center the target element
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Show glowing highlight
+        setHeroHighlightedPromptIndex(index);
+        
+        // Clear highlight after 1.5 seconds
+        setTimeout(() => {
+          setHeroHighlightedPromptIndex(null);
+        }, 1500);
+      }
+    }
+  }
+
   const toggleFaq = (index) => {
     setActiveFaqIndex(activeFaqIndex === index ? null : index);
   };
@@ -368,11 +392,7 @@ function App() {
         </div>
 
         <div className="hero-right">
-          <div
-            className="interactive-mockup"
-            onMouseEnter={() => setIsHeroMockupHovered(true)}
-            onMouseLeave={() => setIsHeroMockupHovered(false)}
-          >
+          <div className="interactive-mockup hero-chat-simulator">
             <div className="mockup-reflection"></div>
             <div className="mockup-header">
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -380,34 +400,106 @@ function App() {
                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }}></div>
                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e' }}></div>
               </div>
-              <div className="mockup-url-bar">claude.ai/chat/scroll-anchored</div>
+              <div className="mockup-url-bar">
+                <span>🔒</span> claude.ai/chat/scroll-navigation
+              </div>
             </div>
-            <div className="mockup-body">
-              <div className="mockup-chat-bubble user">
-                Can you explain what scroll anchoring does?
-              </div>
-              <div className="mockup-chat-bubble ai">
-                Scroll anchoring locks your screen viewport so manual scroll remains unchanged even if the page structure modifies dynamically...
-              </div>
-
-              <button className="mockup-float-btn">
-                <span style={{ fontWeight: '700', fontSize: '15px' }}>Active</span>
-                <span style={{ fontSize: '8px', opacity: 0.8, textTransform: 'uppercase' }}>scroll fix</span>
-              </button>
-
-              {/* Sliding sidebar panel */}
-              <motion.div
-                className="mockup-sidebar"
-                initial={{ x: '100%' }}
-                animate={{ x: isHeroMockupHovered ? 0 : '100%' }}
-                transition={{ type: 'spring', damping: 22, stiffness: 200 }}
+            
+            <div className="mockup-body hero-chat-container-relative">
+              <div 
+                ref={heroChatContainerRef}
+                className="hero-chat-simulator-scroll-area"
               >
-                <div className="sidebar-title">Recent Chats</div>
-                <div className="sidebar-item">#1 Fix code scrolling</div>
-                <div className="sidebar-item">#2 DeepSeek API lag</div>
-                <div className="sidebar-item">#3 React 19 features</div>
-                <div className="sidebar-item">#4 Anchor scroll css</div>
-              </motion.div>
+                {/* Turn 1 */}
+                <div 
+                  data-hero-prompt-idx="0" 
+                  className={`mockup-chat-bubble user ${heroHighlightedPromptIndex === 0 ? 'hero-asf-highlighted' : ''}`}
+                >
+                  Write a React hook to handle scroll anchoring, please!
+                </div>
+                <div className="mockup-chat-bubble ai">
+                  <p style={{ marginBottom: '12px' }}>Here is a pure React implementation that listens to layout mutations and automatically locks scroll offsets:</p>
+                  <div className="mock-code-editor">
+                    <div className="editor-header">
+                      <span className="editor-lang">useScrollAnchor.js</span>
+                      <span className="editor-copy">Copy code</span>
+                    </div>
+                    <div className="editor-code-container">
+                      <pre className="code-content" style={{ fontSize: '11px', color: '#93c5fd' }}>
+{`const useScrollAnchor = (containerRef) => {
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new MutationObserver(() => {
+      // scroll anchor lock code
+    });
+    observer.observe(container, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [containerRef]);
+};`}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Turn 2 */}
+                <div 
+                  data-hero-prompt-idx="1" 
+                  className={`mockup-chat-bubble user ${heroHighlightedPromptIndex === 1 ? 'hero-asf-highlighted' : ''}`}
+                >
+                  Is this compatible with Chrome extensions?
+                </div>
+                <div className="mockup-chat-bubble ai">
+                  Yes, it runs inside content scripts and uses chrome.storage.sync for persistence.
+                </div>
+
+                {/* Turn 3 */}
+                <div 
+                  data-hero-prompt-idx="2" 
+                  className={`mockup-chat-bubble user ${heroHighlightedPromptIndex === 2 ? 'hero-asf-highlighted' : ''}`}
+                >
+                  Does it handle zero-width spaces in text matching?
+                </div>
+                <div className="mockup-chat-bubble ai">
+                  Yes, we clean it with normalizeText: text.replace(/[\u200B-\u200D\uFEFF]/g, '') in the search index.
+                </div>
+              </div>
+
+              {/* INJECTED FLOATING BUTTON (Matching extension style) */}
+              <div 
+                id="hero-asf-btn"
+                className="asf-dark"
+                onMouseEnter={() => setHeroShowNavPanel(true)}
+                onMouseLeave={() => setHeroShowNavPanel(false)}
+                onClick={() => setHeroShowNavPanel(!heroShowNavPanel)}
+              >
+                <span id="hero-asf-num">3</span>
+                <span id="hero-asf-label">chats</span>
+              </div>
+
+              {/* INJECTED NAV PANEL (Matching extension style) */}
+              <div 
+                id="hero-asf-panel"
+                className={`asf-dark ${heroShowNavPanel ? 'show' : ''}`}
+                onMouseEnter={() => setHeroShowNavPanel(true)}
+                onMouseLeave={() => setHeroShowNavPanel(false)}
+              >
+                <div className="asf-header">
+                  <span className="asf-header-title">Chat Navigation</span>
+                  <span className="asf-header-badge">3</span>
+                </div>
+                <div className="asf-list">
+                  {simPromptsList.map((prompt, idx) => (
+                    <div 
+                      key={idx}
+                      className="asf-item"
+                      onClick={() => handleHeroScrollToPrompt(idx)}
+                    >
+                      <span className="asf-item-index">#{idx + 1}</span> {prompt}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -719,27 +811,28 @@ function App() {
               </div>
             </div>
             
-            <div 
-              ref={chatContainerRef}
-              className="mockup-body chat-simulator-body"
-              onClick={handleSimulateChatActivity}
-            >
-              {/* Turn 1 */}
+            <div className="mockup-body chat-simulator-container-relative">
               <div 
-                data-prompt-idx="0" 
-                className={`mockup-chat-bubble user ${highlightedPromptIndex === 0 ? 'asf-highlighted' : ''}`}
+                ref={chatContainerRef}
+                className="chat-simulator-scroll-area"
+                onClick={handleSimulateChatActivity}
               >
-                Write a React hook to handle scroll anchoring, please!
-              </div>
-              <div className="mockup-chat-bubble ai">
-                <p style={{ marginBottom: '12px' }}>Here is a pure React implementation that listens to layout mutations and automatically locks scroll offsets:</p>
-                <div className="mock-code-editor">
-                  <div className="editor-header">
-                    <span className="editor-lang">useScrollAnchor.js</span>
-                    <span className="editor-copy">Copy code</span>
-                  </div>
-                  <div className="editor-code-container">
-                    <pre className="code-content" style={{ fontSize: '11px', color: '#93c5fd' }}>
+                {/* Turn 1 */}
+                <div 
+                  data-prompt-idx="0" 
+                  className={`mockup-chat-bubble user ${highlightedPromptIndex === 0 ? 'asf-highlighted' : ''}`}
+                >
+                  Write a React hook to handle scroll anchoring, please!
+                </div>
+                <div className="mockup-chat-bubble ai">
+                  <p style={{ marginBottom: '12px' }}>Here is a pure React implementation that listens to layout mutations and automatically locks scroll offsets:</p>
+                  <div className="mock-code-editor">
+                    <div className="editor-header">
+                      <span className="editor-lang">useScrollAnchor.js</span>
+                      <span className="editor-copy">Copy code</span>
+                    </div>
+                    <div className="editor-code-container">
+                      <pre className="code-content" style={{ fontSize: '11px', color: '#93c5fd' }}>
 {`const useScrollAnchor = (containerRef) => {
   useEffect(() => {
     const container = containerRef.current;
@@ -751,31 +844,32 @@ function App() {
     return () => observer.disconnect();
   }, [containerRef]);
 };`}
-                    </pre>
+                      </pre>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Turn 2 */}
-              <div 
-                data-prompt-idx="1" 
-                className={`mockup-chat-bubble user ${highlightedPromptIndex === 1 ? 'asf-highlighted' : ''}`}
-              >
-                Is this compatible with Chrome extensions?
-              </div>
-              <div className="mockup-chat-bubble ai">
-                Yes, it runs inside content scripts and uses chrome.storage.sync for persistence.
-              </div>
+                {/* Turn 2 */}
+                <div 
+                  data-prompt-idx="1" 
+                  className={`mockup-chat-bubble user ${highlightedPromptIndex === 1 ? 'asf-highlighted' : ''}`}
+                >
+                  Is this compatible with Chrome extensions?
+                </div>
+                <div className="mockup-chat-bubble ai">
+                  Yes, it runs inside content scripts and uses chrome.storage.sync for persistence.
+                </div>
 
-              {/* Turn 3 */}
-              <div 
-                data-prompt-idx="2" 
-                className={`mockup-chat-bubble user ${highlightedPromptIndex === 2 ? 'asf-highlighted' : ''}`}
-              >
-                Does it handle zero-width spaces in text matching?
-              </div>
-              <div className="mockup-chat-bubble ai">
-                Yes, we clean it with normalizeText: text.replace(/[\u200B-\u200D\uFEFF]/g, '') in the search index.
+                {/* Turn 3 */}
+                <div 
+                  data-prompt-idx="2" 
+                  className={`mockup-chat-bubble user ${highlightedPromptIndex === 2 ? 'asf-highlighted' : ''}`}
+                >
+                  Does it handle zero-width spaces in text matching?
+                </div>
+                <div className="mockup-chat-bubble ai">
+                  Yes, we clean it with normalizeText: text.replace(/[\u200B-\u200D\uFEFF]/g, '') in the search index.
+                </div>
               </div>
 
               {/* INJECTED FLOATING BUTTON (Matching content.js style) */}

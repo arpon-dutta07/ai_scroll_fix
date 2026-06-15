@@ -129,99 +129,52 @@ function App() {
     setActiveFaqIndex(activeFaqIndex === index ? null : index);
   };
 
-  // Interactive Simulator States
-  const [isProtectionActive, setIsProtectionActive] = useState(true)
-  const [isWhitelistedChatGPT, setIsWhitelistedChatGPT] = useState(true)
-  const [isWhitelistedClaude, setIsWhitelistedClaude] = useState(true)
-  const [isWhitelistedGemini, setIsWhitelistedGemini] = useState(true)
-  const [isWhitelistedDeepSeek, setIsWhitelistedDeepSeek] = useState(false)
-  const [isSimStreaming, setIsSimStreaming] = useState(false)
-  const [simStreamedLines, setSimStreamedLines] = useState([])
-  const [simJumpsCount, setSimJumpsCount] = useState(1429)
-  const [simScrollJitter, setSimScrollJitter] = useState(false)
+  // Interactive Simulator States (100% accurate to actual extension)
+  const [popupChatsCount, setPopupChatsCount] = useState(14)
+  const [lastPlatform, setLastPlatform] = useState('claude.ai')
+  const [showNavPanel, setShowNavPanel] = useState(false)
+  const [highlightedPromptIndex, setHighlightedPromptIndex] = useState(null)
 
   const chatContainerRef = useRef(null)
 
-  const fullCodeLines = [
-    "// Implementing smooth scroll anchors",
-    "const useScrollAnchor = (containerRef) => {",
-    "  const lastScrollHeight = useRef(0);",
-    "  const lastScrollTop = useRef(0);",
-    "",
-    "  useEffect(() => {",
-    "    const container = containerRef.current;",
-    "    if (!container) return;",
-    "",
-    "    const handleMutation = () => {",
-    "      const { scrollHeight, scrollTop } = container;",
-    "      const heightDiff = scrollHeight - lastScrollHeight.current;",
-    "",
-    "      if (heightDiff > 0 && scrollTop > 0) {",
-    "        // Locking scroll position automatically!",
-    "        container.scrollTop = scrollTop + heightDiff;",
-    "      }",
-    "      lastScrollHeight.current = scrollHeight;",
-    "    };",
-    "",
-    "    const observer = new MutationObserver(handleMutation);",
-    "    observer.observe(container, { childList: true, subtree: true });",
-    "    return () => observer.disconnect();",
-    "  }, [containerRef]);",
-    "};",
-    "// Fix applied successfully! Zero jumps."
+  // Injected navigation list prompts
+  const simPromptsList = [
+    "Write a React hook to handle scroll anchoring, please!",
+    "Is this compatible with Chrome extensions?",
+    "Does it handle zero-width spaces in text matching?"
   ]
 
-  // Stream Simulation Effect
-  useEffect(() => {
-    let timer;
-    if (isSimStreaming) {
-      setSimStreamedLines([]);
-      setSimScrollJitter(false);
-      let lineIdx = 0;
-      
-      timer = setInterval(() => {
-        if (lineIdx < fullCodeLines.length) {
-          const newLine = fullCodeLines[lineIdx];
-          setSimStreamedLines(prev => [...prev, newLine]);
-          
-          // Trigger layout shifts if protection is off
-          if (!isProtectionActive) {
-            setSimScrollJitter(true);
-            setSimJumpsCount(prev => prev + 1);
-            // Reset jitter after a brief moment to simulate snapping jumps
-            setTimeout(() => setSimScrollJitter(false), 120);
-          } else {
-            setSimScrollJitter(false);
-          }
+  // Reset extension storage counter simulator
+  const handleResetCounter = () => {
+    setPopupChatsCount(0)
+    setLastPlatform('None')
+  }
 
-          lineIdx++;
-        } else {
-          setIsSimStreaming(false);
-          clearInterval(timer);
-        }
-      }, 300); // 300ms typewriter delay
-    } else {
-      // Default initial lines
-      setSimStreamedLines(fullCodeLines.slice(0, 4));
-    }
-    return () => clearInterval(timer);
-  }, [isSimStreaming, isProtectionActive]);
-
-  // Keep chat container scrolled to bottom (or locked) when streaming
-  useEffect(() => {
+  // Smooth scroll and highlight simulation handler (matching content.js)
+  const handleScrollToPrompt = (index) => {
     if (chatContainerRef.current) {
       const container = chatContainerRef.current;
-      if (isProtectionActive) {
-        container.scrollTop = container.scrollHeight;
-      } else {
-        if (isSimStreaming) {
-          container.scrollTop = container.scrollHeight - 100 - (Math.random() * 80);
-        } else {
-          container.scrollTop = container.scrollHeight;
-        }
+      const targetEl = container.querySelector(`[data-prompt-idx="${index}"]`);
+      if (targetEl) {
+        // Smoothly scroll the container to center the target element
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Show glowing highlight (matching line 809 of content.js)
+        setHighlightedPromptIndex(index);
+        
+        // Clear highlight after 1.5 seconds (matching line 820 of content.js)
+        setTimeout(() => {
+          setHighlightedPromptIndex(null);
+        }, 1500);
       }
     }
-  }, [simStreamedLines, isProtectionActive, isSimStreaming]);
+  }
+
+  // Auto-increment counter when user interacts
+  const handleSimulateChatActivity = () => {
+    setPopupChatsCount(prev => prev + 1)
+    setLastPlatform('claude.ai')
+  }
 
   // Refs for scroll-trigger animations
   const stepsRef = useRef(null)
@@ -687,7 +640,7 @@ function App() {
           <span className="section-tag">Interactive Simulator</span>
           <h2 className="section-title">See The Difference</h2>
           <p className="section-subtitle">
-            Play with the control panel below. Toggle the extension on or off to simulate scroll-jumps in real-time as the AI streams code blocks.
+            Hover over the floating navigator on the left chat mockup to quickly jump back to any previous prompt, and check the real extension popup dashboard on the right.
           </p>
         </div>
 
@@ -701,160 +654,157 @@ function App() {
                 <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#27c93f' }}></div>
               </div>
               <div className="mockup-url-bar">
-                <span>🔒</span> claude.ai/chat/scroll-test
+                <span>🔒</span> claude.ai/chat/scroll-navigation
               </div>
             </div>
             
             <div 
               ref={chatContainerRef}
-              className={`mockup-body chat-simulator-body ${simScrollJitter ? 'vibrate-jump' : ''}`}
+              className="mockup-body chat-simulator-body"
+              onClick={handleSimulateChatActivity}
             >
-              {/* Scroll Anchor Line Overlay when active */}
-              {isProtectionActive && isSimStreaming && (
-                <div className="scroll-lock-laser">
-                  <div className="laser-line"></div>
-                  <div className="laser-badge">SCROLL ANCHOR: LOCKED</div>
-                </div>
-              )}
-              
-              <div className="mockup-chat-bubble user">
+              {/* Turn 1 */}
+              <div 
+                data-prompt-idx="0" 
+                className={`mockup-chat-bubble user ${highlightedPromptIndex === 0 ? 'asf-highlighted' : ''}`}
+              >
                 Write a React hook to handle scroll anchoring, please!
               </div>
-              
-              <div className="mockup-chat-bubble ai chat-stream-bubble">
+              <div className="mockup-chat-bubble ai">
                 <p style={{ marginBottom: '12px' }}>Here is a pure React implementation that listens to layout mutations and automatically locks scroll offsets:</p>
-                
-                {/* Code Window */}
                 <div className="mock-code-editor">
                   <div className="editor-header">
                     <span className="editor-lang">useScrollAnchor.js</span>
                     <span className="editor-copy">Copy code</span>
                   </div>
                   <div className="editor-code-container">
-                    <div className="line-numbers">
-                      {simStreamedLines.map((_, i) => (
-                        <div key={i} className="line-num">{i + 1}</div>
-                      ))}
-                    </div>
-                    <pre className="code-content">
-                      {simStreamedLines.map((line, i) => (
-                        <code key={i} className="code-line">
-                          {line || "\u00A0"}
-                        </code>
-                      ))}
-                      {isSimStreaming && <span className="blinking-cursor editor-cursor"></span>}
+                    <pre className="code-content" style={{ fontSize: '11px', color: '#93c5fd' }}>
+{`const useScrollAnchor = (containerRef) => {
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new MutationObserver(() => {
+      // scroll anchor lock code
+    });
+    observer.observe(container, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [containerRef]);
+};`}
                     </pre>
                   </div>
                 </div>
-                
-                {!isSimStreaming && simStreamedLines.length === fullCodeLines.length && (
-                  <p style={{ marginTop: '12px', color: '#4ade80', fontSize: '12px', fontWeight: '600' }}>✓ Stream Finished. Scroll Anchored successfully.</p>
-                )}
+              </div>
+
+              {/* Turn 2 */}
+              <div 
+                data-prompt-idx="1" 
+                className={`mockup-chat-bubble user ${highlightedPromptIndex === 1 ? 'asf-highlighted' : ''}`}
+              >
+                Is this compatible with Chrome extensions?
+              </div>
+              <div className="mockup-chat-bubble ai">
+                Yes, it runs inside content scripts and uses chrome.storage.sync for persistence.
+              </div>
+
+              {/* Turn 3 */}
+              <div 
+                data-prompt-idx="2" 
+                className={`mockup-chat-bubble user ${highlightedPromptIndex === 2 ? 'asf-highlighted' : ''}`}
+              >
+                Does it handle zero-width spaces in text matching?
+              </div>
+              <div className="mockup-chat-bubble ai">
+                Yes, we clean it with normalizeText: text.replace(/[\u200B-\u200D\uFEFF]/g, '') in the search index.
+              </div>
+
+              {/* INJECTED FLOATING BUTTON (Matching content.js style) */}
+              <div 
+                id="asf-btn"
+                className="asf-dark"
+                onMouseEnter={() => setShowNavPanel(true)}
+                onMouseLeave={() => setShowNavPanel(false)}
+                onClick={() => setShowNavPanel(!showNavPanel)}
+              >
+                <span id="asf-num">3</span>
+                <span id="asf-label">chats</span>
+              </div>
+
+              {/* INJECTED NAV PANEL (Matching content.js style) */}
+              <div 
+                id="asf-panel"
+                className={`asf-dark ${showNavPanel ? 'show' : ''}`}
+                onMouseEnter={() => setShowNavPanel(true)}
+                onMouseLeave={() => setShowNavPanel(false)}
+              >
+                <div className="asf-header">
+                  <span className="asf-header-title">Chat Navigation</span>
+                  <span className="asf-header-badge">3</span>
+                </div>
+                <div className="asf-list">
+                  {simPromptsList.map((prompt, idx) => (
+                    <div 
+                      key={idx}
+                      className="asf-item"
+                      onClick={() => handleScrollToPrompt(idx)}
+                    >
+                      <span className="asf-item-index">#{idx + 1}</span> {prompt}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             
-            <div className="simulator-controls-overlay">
-              <button 
-                onClick={() => setIsSimStreaming(true)}
-                disabled={isSimStreaming}
-                className="simulator-action-btn spring-btn"
-              >
-                {isSimStreaming ? "Streaming Code..." : "⚡ Simulate AI Stream"}
-              </button>
+            <div className="simulator-helper-banner">
+              <span>💡 Hover or Click the floating button (3 chats) to reveal prompt quick-navigation panel!</span>
             </div>
           </div>
 
-          {/* RIGHT PANEL: Extension Control board */}
+          {/* RIGHT PANEL: Replicating real popup.html / popup.js */}
           <div className="demo-mockup extension-popup-window">
             <div className="mockup-header">
               <div className="extension-badge-header">
-                <div className="logo-dot small"></div>
-                <span>Chrome Extension Panel</span>
+                <span className="window-dots">•••</span>
+                <span>Chrome Extension UI</span>
               </div>
             </div>
             
-            <div className="mockup-body extension-body">
-              {/* MAIN TOGGLE BOARD */}
-              <div className="extension-card-main">
-                <div className="extension-logo-row">
-                  <div className="logo-wrapper">
-                    <div className="logo-dot"></div>
-                    <span className="logo-text-large">AI Scroll Fix</span>
-                  </div>
-                  <div className="power-switch-container">
-                    <button 
-                      onClick={() => setIsProtectionActive(!isProtectionActive)}
-                      className={`power-switch-btn spring-btn ${isProtectionActive ? 'active' : 'paused'}`}
-                    >
-                      <div className="power-icon">⏻</div>
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="protection-status-display">
-                  <span className={`status-pill ${isProtectionActive ? 'status-green' : 'status-red'}`}>
-                    {isProtectionActive ? "PROTECTION: ACTIVE" : "PROTECTION: PAUSED"}
-                  </span>
-                </div>
-              </div>
-
-              {/* DOMAINS WHITELIST */}
-              <div className="extension-whitelist-card">
-                <div className="whitelist-title">Active Domains</div>
-                <div className="whitelist-items">
-                  <div className="whitelist-item">
-                    <span className="domain-name">chatgpt.com</span>
-                    <input 
-                      type="checkbox" 
-                      checked={isWhitelistedChatGPT} 
-                      onChange={() => setIsWhitelistedChatGPT(!isWhitelistedChatGPT)}
-                      className="whitelist-toggle"
-                    />
-                  </div>
-                  <div className="whitelist-item">
-                    <span className="domain-name">claude.ai</span>
-                    <input 
-                      type="checkbox" 
-                      checked={isWhitelistedClaude} 
-                      onChange={() => setIsWhitelistedClaude(!isWhitelistedClaude)}
-                      className="whitelist-toggle"
-                    />
-                  </div>
-                  <div className="whitelist-item">
-                    <span className="domain-name">gemini.google.com</span>
-                    <input 
-                      type="checkbox" 
-                      checked={isWhitelistedGemini} 
-                      onChange={() => setIsWhitelistedGemini(!isWhitelistedGemini)}
-                      className="whitelist-toggle"
-                    />
-                  </div>
-                  <div className="whitelist-item">
-                    <span className="domain-name">chat.deepseek.com</span>
-                    <input 
-                      type="checkbox" 
-                      checked={isWhitelistedDeepSeek} 
-                      onChange={() => setIsWhitelistedDeepSeek(!isWhitelistedDeepSeek)}
-                      className="whitelist-toggle"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* STATS ROW */}
-              <div className="extension-stats-grid">
-                <div className="stat-card">
-                  <span className="stat-label">Jumps Prevented</span>
-                  <span className="stat-value text-glow-red">{simJumpsCount}</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-label">Response Lag</span>
-                  <span className="stat-value text-glow-green">&lt; 1ms</span>
-                </div>
-              </div>
+            <div className="mockup-body extension-popup-body">
+              <h2 className="extension-popup-title">
+                🔧 AI Scroll Fix
+              </h2>
               
-              <div className="extension-footer-tips">
-                <span>💡 Tip: Pause the protection and click "Simulate AI Stream" to see how the viewport jumps erratically without AI Scroll Fix.</span>
+              <div className="extension-popup-stats-card">
+                <span className="extension-popup-stats-count">
+                  {popupChatsCount}
+                </span>
+                <span className="extension-popup-stats-label">
+                  AI Chats Tracked
+                </span>
+              </div>
+
+              <div className="extension-popup-last-platform">
+                Last visited: <span className="highlight-plat">{lastPlatform}</span>
+              </div>
+
+              <div className="extension-popup-platform-card">
+                <ul className="extension-popup-platform-list">
+                  <li><span className="check">&#10003;</span> ChatGPT</li>
+                  <li><span className="check">&#10003;</span> Claude.ai</li>
+                  <li><span className="check">&#10003;</span> Gemini</li>
+                  <li><span className="check">&#10003;</span> Perplexity</li>
+                  <li><span className="check">&#10003;</span> Copilot</li>
+                  <li><span className="check">&#10003;</span> You.com</li>
+                  <li><span className="check">&#10003;</span> DeepSeek</li>
+                </ul>
+              </div>
+
+              <div className="extension-popup-footer">
+                <button 
+                  onClick={handleResetCounter}
+                  id="reset-btn"
+                >
+                  Reset Counter
+                </button>
               </div>
             </div>
           </div>

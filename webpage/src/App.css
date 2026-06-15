@@ -818,32 +818,67 @@ a, button, select, input, textarea {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  transition: border-color 0.4s ease, transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease;
+  transition: background 0.4s ease, border-color 0.4s ease, transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease;
 }
 
-/* Base custom glow background behind platform card */
+/* Glassmorphic border glow moving overlay */
+.platform-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  padding: 1.5px;
+  background: linear-gradient(135deg, 
+    transparent 0%, 
+    var(--glow-color) 50%, 
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease, background-position 0.6s ease;
+  background-size: 200% 200%;
+  background-position: 0% 0%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Ambient backdrop glow that animates on hover */
 .platform-card-glow-bg {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 140px;
-  height: 140px;
+  transform: translate(-50%, -50%) scale(0.75);
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--glow-color, rgba(225, 29, 72, 0.1)) 0%, transparent 60%);
+  background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
   opacity: 0;
-  transition: opacity 0.4s ease;
+  filter: blur(24px);
+  transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1), transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
   pointer-events: none;
+  z-index: 0;
 }
 
 .platform-card:hover {
-  transform: translateY(-5px);
-  border-color: var(--glow-color);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px var(--glow-color-soft);
+  transform: translateY(-8px) scale(1.02);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, var(--glow-color-soft) 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.5), 
+    0 0 40px var(--glow-color-soft),
+    inset 0 0 12px var(--glow-color-soft);
+}
+
+.platform-card:hover::before {
+  opacity: 0.85;
+  background-position: 100% 100%;
 }
 
 .platform-card:hover .platform-card-glow-bg {
-  opacity: 1;
+  opacity: 0.16;
+  transform: translate(-50%, -50%) scale(1.2);
 }
 
 /* Brand specific coloring styles */
@@ -883,18 +918,27 @@ a, button, select, input, textarea {
   align-items: center;
   justify-content: center;
   color: #a0a0b0;
-  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), color 0.4s ease, border-color 0.4s ease;
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  z-index: 1;
+  position: relative;
 }
 
 .platform-card:hover .platform-icon-wrapper {
   color: white;
-  border-color: var(--glow-color);
-  transform: scale(1.1) rotate(5deg);
+  border-color: rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), var(--glow-color-soft));
+  transform: scale(1.15) translateY(-2px);
+  box-shadow: 0 8px 20px var(--glow-color-soft);
 }
 
 .platform-logo-svg {
   width: 28px;
   height: 28px;
+  transition: filter 0.4s ease;
+}
+
+.platform-card:hover .platform-logo-svg {
+  filter: drop-shadow(0 0 6px var(--glow-color));
 }
 
 .platform-name {
@@ -903,6 +947,11 @@ a, button, select, input, textarea {
   font-weight: 700;
   color: white;
   margin-top: 4px;
+  transition: text-shadow 0.4s ease;
+}
+
+.platform-card:hover .platform-name {
+  text-shadow: 0 0 12px var(--glow-color-soft);
 }
 
 .platform-url {

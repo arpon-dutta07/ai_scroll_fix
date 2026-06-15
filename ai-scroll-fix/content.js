@@ -69,6 +69,17 @@
       .slice(0, 50);
   }
 
+  function truncateText(str, limit) {
+    if (!str) return '';
+    if (str.length <= limit) return str;
+    var truncated = str.slice(0, limit);
+    var lastSpace = truncated.lastIndexOf(' ');
+    if (lastSpace > limit * 0.7) {
+      truncated = truncated.slice(0, lastSpace);
+    }
+    return truncated.trim() + '...';
+  }
+
   function isElementValid(el, expectedText) {
     if (!el || !document.body.contains(el)) return false;
     try {
@@ -229,7 +240,10 @@
 
   function fetchClaudeMessages() {
     var match = window.location.pathname.match(/\/chat\/([a-f0-9\-]+)/);
-    if (!match) return;
+    if (!match) {
+      scanMessages();
+      return;
+    }
     var chatUuid = match[1];
 
     fetch('/api/organizations')
@@ -247,7 +261,10 @@
         return res.json();
       })
       .then(function(data) {
-        if (!data || !data.chat_messages) return;
+        if (!data || !data.chat_messages) {
+          scanMessages();
+          return;
+        }
 
         var apiUserMessages = data.chat_messages.filter(function(msg) {
           return msg.sender === 'human';
@@ -282,13 +299,17 @@
         updateCount();
       })
       .catch(function(err) {
-        console.error('[AI Scroll Fix] Claude API fetch error:', err);
+        console.warn('[AI Scroll Fix] Claude API fetch error (falling back to DOM scan):', err);
+        scanMessages();
       });
   }
 
   function fetchChatGPTMessages() {
     var match = window.location.pathname.match(/\/c\/([a-f0-9\-]+)/);
-    if (!match) return;
+    if (!match) {
+      scanMessages();
+      return;
+    }
     var chatUuid = match[1];
 
     fetch('/backend-api/conversation/' + chatUuid)
@@ -297,7 +318,10 @@
         return res.json();
       })
       .then(function(data) {
-        if (!data || !data.mapping || !data.current_node) return;
+        if (!data || !data.mapping || !data.current_node) {
+          scanMessages();
+          return;
+        }
 
         // Trace back from leaf node to root
         var path = [];
@@ -345,7 +369,8 @@
         updateCount();
       })
       .catch(function(err) {
-        console.error('[AI Scroll Fix] ChatGPT API fetch error:', err);
+        console.warn('[AI Scroll Fix] ChatGPT API fetch error (falling back to DOM scan):', err);
+        scanMessages();
       });
   }
 
@@ -653,7 +678,8 @@
       allMessages.forEach(function(m, i) {
         var d = document.createElement('div');
         d.style.cssText = 'padding:8px 10px;color:white;font-size:12px;border-radius:8px;cursor:pointer;margin-bottom:4px;background:rgba(255,255,255,0.05);line-height:1.4;word-break:break-word;transition:background 0.2s ease;';
-        d.innerText = '#' + (i + 1) + ' \u2014 ' + m.text;
+        d.innerText = '#' + (i + 1) + ' \u2014 ' + truncateText(m.text, 65);
+        d.title = m.text;
         d.addEventListener('mouseover', function() { d.style.background = 'rgba(255,255,255,0.15)'; });
         d.addEventListener('mouseout', function() { d.style.background = 'rgba(255,255,255,0.05)'; });
         

@@ -64,8 +64,8 @@ const CounterValue = ({ target, suffix }) => {
   return <>{value}{suffix}</>
 }
 
-// Helper component for 3D tilt feature cards
-const TiltCard = ({ emoji, title, desc, index }) => {
+// Helper component for 3D tilt Bento cards
+const BentoCard = ({ className, children, index }) => {
   const [transform, setTransform] = useState('perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)')
   const [glowStyle, setGlowStyle] = useState({ opacity: 0, background: '' })
 
@@ -80,14 +80,14 @@ const TiltCard = ({ emoji, title, desc, index }) => {
     const dx = x - xc
     const dy = y - yc
     
-    // Tilt calculations (max 8 degrees)
-    const tiltX = -(dy / yc) * 8
-    const tiltY = (dx / xc) * 8
+    // Tilt calculations (max 6 degrees)
+    const tiltX = -(dy / yc) * 6
+    const tiltY = (dx / xc) * 6
     
-    setTransform(`perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(10px)`)
+    setTransform(`perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(8px)`)
     setGlowStyle({
       opacity: 1,
-      background: `radial-gradient(circle at ${x}px ${y}px, rgba(225, 29, 72, 0.15) 0%, transparent 60%)`
+      background: `radial-gradient(circle at ${x}px ${y}px, rgba(225, 29, 72, 0.12) 0%, transparent 60%)`
     })
   }
 
@@ -98,22 +98,22 @@ const TiltCard = ({ emoji, title, desc, index }) => {
 
   return (
     <motion.div
-      className="feature-card-wrapper"
-      initial={{ opacity: 0, y: 60 }}
+      className={`bento-card-wrapper ${className || ''}`}
+      initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: index * 0.08 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: index * 0.1 }}
     >
       <div
-        className="feature-card-tilt spring-card"
+        className="bento-card spring-card"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         style={{ transform: transform }}
       >
         <div className="card-cursor-glow" style={glowStyle} />
-        <span className="feature-emoji">{emoji}</span>
-        <h3 className="feature-title">{title}</h3>
-        <p className="feature-desc">{desc}</p>
+        <div className="bento-card-content">
+          {children}
+        </div>
       </div>
     </motion.div>
   )
@@ -124,6 +124,9 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeFaqIndex, setActiveFaqIndex] = useState(null)
   const [isHeroMockupHovered, setIsHeroMockupHovered] = useState(false)
+
+  // Bento Card lock switch state
+  const [isLockActive, setIsLockActive] = useState(true)
 
   const toggleFaq = (index) => {
     setActiveFaqIndex(activeFaqIndex === index ? null : index);
@@ -204,38 +207,7 @@ function App() {
     }))
   ).current
 
-  const features = [
-    {
-      emoji: '🔒',
-      title: 'Auto-Scroll Lock',
-      desc: 'Prevents the viewport from jumping around while the AI model streams code blocks or text chunks.'
-    },
-    {
-      emoji: '⚡',
-      title: 'Zero Overhead',
-      desc: 'Written in pure, optimized JavaScript. No runtime delay or high CPU cycles. Extremely lightweight.'
-    },
-    {
-      emoji: '🌐',
-      title: 'Universal AI Support',
-      desc: 'Works flawlessly on ChatGPT, Claude, Gemini, DeepSeek, and other web chat portals out of the box.'
-    },
-    {
-      emoji: '⚙️',
-      title: 'Seamless Controls',
-      desc: 'Disable or enable the scroll lock with a simple browser toggle button or customizable shortcuts.'
-    },
-    {
-      emoji: '👤',
-      title: 'Privacy Preserved',
-      desc: 'Zero user data collection. Runs entirely in your local browser sandbox. Safe, secure, and offline.'
-    },
-    {
-      emoji: '📂',
-      title: 'Open Source',
-      desc: 'Completely open source codebase. Inspect the code, submit pull requests, or fork it on GitHub.'
-    }
-  ]
+  // Removed features list in favor of custom Bento Grid layout
 
   const platforms = [
     { name: 'ChatGPT', url: 'chatgpt.com', status: 'Active', id: 'chatgpt' },
@@ -454,20 +426,109 @@ function App() {
           <span className="section-tag">Features</span>
           <h2 className="section-title">Engineered for Focus</h2>
           <p className="section-subtitle">
-            Say goodbye to scroll fights. This extension resolves UI layout issues behind the scenes so you can read code blocks, review drafts, and follow AI streaming cleanly.
+            Say goodbye to scroll fights. This extension resolves UI layout shifts dynamically so you can read, review, and prompt without interruption.
           </p>
         </div>
 
-        <div className="features-grid">
-          {features.map((feat, index) => (
-            <TiltCard
-              key={index}
-              emoji={feat.emoji}
-              title={feat.title}
-              desc={feat.desc}
-              index={index}
-            />
-          ))}
+        <div className="features-grid bento-layout">
+          {/* Card 1: Universal AI Support (Large Wide Bento Card) */}
+          <BentoCard className="bento-large" index={0}>
+            <div className="bento-split-layout">
+              <div className="bento-text-side">
+                <div className="bento-badge">✦ COMPATIBILITY</div>
+                <div className="bento-header-row">
+                  <span className="bento-emoji">🌐</span>
+                  <h3 className="bento-title">Universal AI Support</h3>
+                </div>
+                <p className="bento-desc">
+                  Works flawlessly on ChatGPT, Claude, Gemini, DeepSeek, and other web chat portals out of the box. No manual scripting needed.
+                </p>
+              </div>
+              <div className="bento-visual-side platform-orbit-visual">
+                <div className="orbital-core">
+                  <div className="orbital-logo-dot"></div>
+                </div>
+                <div className="orbital-satellites">
+                  <div className="satellite sat-chatgpt">
+                    {brandLogos.chatgpt}
+                    <span>ChatGPT</span>
+                  </div>
+                  <div className="satellite sat-claude">
+                    {brandLogos.claude}
+                    <span>Claude</span>
+                  </div>
+                  <div className="satellite sat-gemini">
+                    {brandLogos.gemini}
+                    <span>Gemini</span>
+                  </div>
+                  <div className="satellite sat-deepseek">
+                    {brandLogos.deepseek}
+                    <span>DeepSeek</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </BentoCard>
+
+          {/* Card 2: Zero Overhead (Normal Bento Card) */}
+          <BentoCard className="bento-small bento-overhead" index={1}>
+            <div className="bento-flex-layout">
+              <div className="bento-text-side">
+                <div className="bento-header-row">
+                  <span className="bento-emoji">⚡</span>
+                  <h3 className="bento-title">Zero Overhead</h3>
+                </div>
+                <p className="bento-desc">
+                  Written in pure, optimized JavaScript. No runtime delay or high CPU cycles. Extremely lightweight extension footprint.
+                </p>
+              </div>
+              
+              <div className="bento-visual-widget performance-widget">
+                <div className="perf-gauge">
+                  <div className="perf-gauge-fill"></div>
+                  <div className="perf-gauge-text">
+                    <span className="gauge-number">0.0</span>
+                    <span className="gauge-unit">ms lag</span>
+                  </div>
+                </div>
+                <div className="perf-spark-lines">
+                  <div className="spark-line line-1"></div>
+                  <div className="spark-line line-2"></div>
+                  <div className="spark-line line-3"></div>
+                </div>
+              </div>
+            </div>
+          </BentoCard>
+
+          {/* Card 3: Seamless Controls (Normal Bento Card) */}
+          <BentoCard className="bento-small bento-controls" index={2}>
+            <div className="bento-flex-layout">
+              <div className="bento-text-side">
+                <div className="bento-header-row">
+                  <span className="bento-emoji">⚙️</span>
+                  <h3 className="bento-title">Seamless Controls</h3>
+                </div>
+                <p className="bento-desc">
+                  Disable or enable the scroll lock with a simple browser toggle switch or custom keyboard shortcuts.
+                </p>
+              </div>
+              
+              <div className="bento-visual-widget controls-widget">
+                <div 
+                  className={`sim-switch-card ${isLockActive ? 'active' : 'inactive'}`}
+                  onClick={() => setIsLockActive(!isLockActive)}
+                >
+                  <span className="sim-switch-label">Scroll Anchor</span>
+                  <div className="sim-switch-track">
+                    <div className="sim-switch-thumb"></div>
+                  </div>
+                  <div className="sim-status-badge">
+                    {isLockActive ? 'ACTIVE' : 'PAUSED'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </BentoCard>
         </div>
       </motion.section>
 

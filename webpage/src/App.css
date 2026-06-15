@@ -665,35 +665,38 @@ a, button, select, input, textarea {
   z-index: 10;
 }
 
-.features-grid {
+.features-grid.bento-layout {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+  margin-top: 60px;
 }
 
-/* 3D Tilt Card */
-.feature-card-wrapper {
+.bento-card-wrapper {
   perspective: 1000px;
 }
 
-.feature-card-tilt {
+.bento-card {
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 24px;
-  padding: 40px 32px;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 28px;
   position: relative;
   overflow: hidden;
   transform-style: preserve-3d;
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, background-color 0.4s ease;
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.feature-card-tilt:hover {
+.bento-card:hover {
   border-color: rgba(225, 29, 72, 0.3);
-  box-shadow: 0 20px 60px rgba(225, 29, 72, 0.15);
+  box-shadow: 0 25px 60px rgba(225, 29, 72, 0.12);
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.feature-card-tilt::before {
+.bento-card::before {
   content: "";
   position: absolute;
   top: 0;
@@ -703,46 +706,428 @@ a, button, select, input, textarea {
   background: linear-gradient(90deg, transparent, #e11d48, transparent);
   opacity: 0;
   transition: opacity 0.3s ease;
+  z-index: 3;
 }
 
-.feature-card-tilt:hover::before {
+.bento-card:hover::before {
   opacity: 1;
 }
 
-.card-cursor-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  transition: opacity 0.3s ease;
-  opacity: 0;
+.bento-card-content {
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  z-index: 2;
+  position: relative;
 }
 
-.feature-card-tilt:hover .card-cursor-glow {
-  opacity: 1;
+.bento-large {
+  grid-column: span 2;
 }
 
-.feature-emoji {
-  font-size: 48px;
-  margin-bottom: 24px;
-  display: block;
-  transform: translateZ(20px);
+.bento-split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+  height: 100%;
+  text-align: left;
 }
 
-.feature-title {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 20px;
+.bento-flex-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  gap: 30px;
+  text-align: left;
+}
+
+.bento-badge {
+  color: #e11d48;
+  font-size: 11px;
   font-weight: 700;
-  color: white;
-  margin-bottom: 12px;
+  letter-spacing: 1.5px;
+  margin-bottom: 16px;
+}
+
+.bento-header-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.bento-emoji {
+  font-size: 32px;
+  display: block;
   transform: translateZ(15px);
 }
 
-.feature-desc {
+.bento-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  transform: translateZ(15px);
+}
+
+.bento-desc {
   color: #a0a0b0;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
   transform: translateZ(10px);
+}
+
+/* Platform Orbit Visual */
+.platform-orbit-visual {
+  position: relative;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.orbital-core {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(225, 29, 72, 0.1);
+  border: 1.5px dashed rgba(225, 29, 72, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: coreSpin 15s linear infinite;
+}
+
+.orbital-logo-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #e11d48;
+  box-shadow: 0 0 15px #e11d48;
+}
+
+.orbital-satellites {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.satellite {
+  position: absolute;
+  background: rgba(15, 15, 25, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 14px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.3s ease;
+}
+
+.satellite svg {
+  width: 18px;
+  height: 18px;
+  color: var(--sat-color, #fff);
+}
+
+/* Floating animation keyframes for orbital satellites */
+@keyframes coreSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes satelliteFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(5px, -8px) scale(1.02); }
+}
+
+@keyframes satelliteFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-8px, 6px) scale(0.98); }
+}
+
+@keyframes satelliteFloat3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(8px, 8px) scale(1.01); }
+}
+
+@keyframes satelliteFloat4 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-6px, -6px) scale(0.99); }
+}
+
+.sat-chatgpt {
+  --sat-color: #10b981;
+  top: 15%;
+  left: 10%;
+  animation: satelliteFloat1 6s ease-in-out infinite;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.sat-claude {
+  --sat-color: #f59e0b;
+  top: 20%;
+  right: 10%;
+  animation: satelliteFloat2 7s ease-in-out infinite;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.sat-gemini {
+  --sat-color: #6366f1;
+  bottom: 20%;
+  left: 15%;
+  animation: satelliteFloat3 8s ease-in-out infinite;
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.sat-deepseek {
+  --sat-color: #06b6d4;
+  bottom: 15%;
+  right: 15%;
+  animation: satelliteFloat4 9s ease-in-out infinite;
+  border-color: rgba(6, 182, 212, 0.2);
+}
+
+/* Performance Widget */
+.performance-widget {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  height: 140px;
+}
+
+.perf-gauge {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.perf-gauge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 6px solid rgba(255, 255, 255, 0.02);
+}
+
+.perf-gauge-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 6px solid transparent;
+  border-top-color: #e11d48;
+  border-right-color: #e11d48;
+  transform: rotate(-45deg);
+  filter: drop-shadow(0 0 6px #e11d48);
+  animation: gaugePulse 3s ease-in-out infinite alternate;
+}
+
+.perf-gauge-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+}
+
+.gauge-number {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+}
+
+.gauge-unit {
+  font-size: 9px;
+  color: #6b6b7a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.perf-spark-lines {
+  flex: 1;
+  margin-left: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spark-line {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.spark-line::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--spark-color, #e11d48), transparent);
+  animation: sparkMove var(--spark-duration, 2s) linear infinite;
+}
+
+.spark-line.line-1 { --spark-duration: 2.2s; --spark-color: #e11d48; }
+.spark-line.line-2 { --spark-duration: 1.8s; --spark-color: #9333ea; }
+.spark-line.line-3 { --spark-duration: 2.5s; --spark-color: #3b82f6; }
+
+@keyframes gaugePulse {
+  0% { transform: rotate(-45deg) scale(0.97); }
+  100% { transform: rotate(-45deg) scale(1.03); }
+}
+
+@keyframes sparkMove {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+/* Controls Widget */
+.controls-widget {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 140px;
+}
+
+.sim-switch-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 280px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.sim-switch-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.03);
+}
+
+.sim-switch-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #a0a0b0;
+  transition: color 0.3s ease;
+}
+
+.sim-switch-track {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: #27272a;
+  padding: 3px;
+  transition: background-color 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  display: flex;
+  align-items: center;
+}
+
+.sim-switch-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.sim-status-badge {
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+/* Switch active states */
+.sim-switch-card.active {
+  background: rgba(34, 197, 94, 0.04);
+  border-color: rgba(34, 197, 94, 0.2);
+  box-shadow: 0 10px 30px rgba(34, 197, 94, 0.05);
+}
+
+.sim-switch-card.active .sim-switch-label {
+  color: white;
+}
+
+.sim-switch-card.active .sim-switch-track {
+  background: #22c55e;
+}
+
+.sim-switch-card.active .sim-switch-thumb {
+  transform: translateX(20px);
+}
+
+.sim-switch-card.active .sim-status-badge {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+/* Switch inactive states */
+.sim-switch-card.inactive {
+  background: rgba(239, 68, 68, 0.03);
+  border-color: rgba(239, 68, 68, 0.15);
+}
+
+.sim-switch-card.inactive .sim-status-badge {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+@media (max-width: 1024px) {
+  .features-grid.bento-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .bento-large {
+    grid-column: span 1;
+  }
+  
+  .bento-split-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .platform-orbit-visual {
+    height: 180px;
+    order: -1;
+  }
 }
 
 /* PLATFORMS SECTION */

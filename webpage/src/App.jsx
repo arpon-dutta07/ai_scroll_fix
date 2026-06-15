@@ -1,11 +1,95 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { FaChrome, FaCode, FaLock } from 'react-icons/fa'
 import './App.css'
+
+// Helper component for smooth number count up animation
+const CounterValue = ({ target, suffix }) => {
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    if (target === 0) {
+      setValue(0)
+      return
+    }
+    let start = 0
+    const duration = 2000
+    const incrementTime = Math.max(Math.floor(duration / target), 15)
+    const timer = setInterval(() => {
+      start += 1
+      setValue(start)
+      if (start >= target) {
+        clearInterval(timer)
+      }
+    }, incrementTime)
+    return () => clearInterval(timer)
+  }, [target])
+  return <>{value}{suffix}</>
+}
+
+// Helper component for 3D tilt feature cards
+const TiltCard = ({ emoji, title, desc, index }) => {
+  const [transform, setTransform] = useState('perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)')
+  const [glowStyle, setGlowStyle] = useState({ opacity: 0, background: '' })
+
+  const handleMouseMove = (e) => {
+    const card = e.currentTarget
+    const rect = card.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    
+    const xc = rect.width / 2
+    const yc = rect.height / 2
+    const dx = x - xc
+    const dy = y - yc
+    
+    // Tilt calculations (max 8 degrees)
+    const tiltX = -(dy / yc) * 8
+    const tiltY = (dx / xc) * 8
+    
+    setTransform(`perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(10px)`)
+    setGlowStyle({
+      opacity: 1,
+      background: `radial-gradient(circle at ${x}px ${y}px, rgba(225, 29, 72, 0.15) 0%, transparent 60%)`
+    })
+  }
+
+  const handleMouseLeave = () => {
+    setTransform('perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)')
+    setGlowStyle({ opacity: 0, background: '' })
+  }
+
+  return (
+    <motion.div
+      className="feature-card-wrapper"
+      initial={{ opacity: 0, y: 60 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: index * 0.08 }}
+    >
+      <div
+        className="feature-card-tilt spring-card"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{ transform: transform }}
+      >
+        <div className="card-cursor-glow" style={glowStyle} />
+        <span className="feature-emoji">{emoji}</span>
+        <h3 className="feature-title">{title}</h3>
+        <p className="feature-desc">{desc}</p>
+      </div>
+    </motion.div>
+  )
+}
 
 function App() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeFaqIndex, setActiveFaqIndex] = useState(null)
+  const [isHeroMockupHovered, setIsHeroMockupHovered] = useState(false)
+
+  // Refs for scroll-trigger animations
+  const stepsRef = useRef(null)
+  const isStepsInView = useInView(stepsRef, { once: true, amount: 0.2 })
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,13 +103,17 @@ function App() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const toggleFaq = (index) => {
-    if (activeFaqIndex === index) {
-      setActiveFaqIndex(null)
-    } else {
-      setActiveFaqIndex(index)
-    }
-  }
+  // 20 randomly distributed particle dots around the footer
+  const particleDots = useRef(
+    Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      top: `${Math.random() * 80 + 10}%`,
+      left: `${Math.random() * 90 + 5}%`,
+      size: `${Math.random() * 4 + 3}px`,
+      delay: `${Math.random() * 4}s`,
+      duration: `${Math.random() * 4 + 4}s`
+    }))
+  ).current
 
   const features = [
     {
@@ -69,6 +157,11 @@ function App() {
     { name: 'Hugging Chat', url: 'huggingface.co/chat', status: 'Active' }
   ]
 
+  const tickerItems = [
+    "ChatGPT", "Claude AI", "Gemini", "DeepSeek", "Perplexity", "Hugging Chat",
+    "ChatGPT", "Claude AI", "Gemini", "DeepSeek", "Perplexity", "Hugging Chat"
+  ]
+
   const steps = [
     {
       num: '01',
@@ -106,19 +199,22 @@ function App() {
     }
   ]
 
+  const heroWords = "Fix AI Scrolling.".split(" ")
+
   return (
     <div className="app-container">
-      {/* Background blobs */}
+      {/* Background elements */}
+      <div className="grid-overlay"></div>
       <div className="bg-blobs">
         <div className="blob blob-red-tr"></div>
         <div className="blob blob-purple-bl"></div>
-        <div className="blob blob-red-br"></div>
+        <div className="blob blob-pink-c"></div>
       </div>
 
       {/* NAVBAR */}
       <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
         <a href="#" className="navbar-logo">
-          <div className="logo-indicator"></div>
+          <div className="logo-dot"></div>
           AI Scroll Fix
         </a>
 
@@ -133,67 +229,138 @@ function App() {
           <a href="#faq" className="nav-link" onClick={() => setIsMenuOpen(false)}>FAQ</a>
         </div>
 
-        <a href="#download" className="navbar-cta">
-          Install Now
+        <a href="#download" className="navbar-cta spring-btn">
+          Download Extension
         </a>
       </nav>
 
       {/* HERO SECTION */}
       <section className="hero-section">
-        <div className="hero-left animate-fade-up">
-          <div className="chrome-pill">
-            <span>✦</span> Chrome Extension — Free Forever
+        <div className="hero-scanline"></div>
+        <div className="hero-left">
+          <div className="badge-pill">
+            <span>✦</span> Free Chrome Extension
           </div>
           <h1 className="hero-heading">
-            Fix AI Scrolling.
-            <span className="accent">Forever.</span>
+            {heroWords.map((word, i) => (
+              <motion.span
+                key={i}
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                style={{ display: 'inline-block', marginRight: '16px' }}
+              >
+                {word}
+              </motion.span>
+            ))}
+            <motion.span
+              className="glow-text"
+              initial={{ opacity: 0, y: 25 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 3 * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
+              Forever.
+            </motion.span>
           </h1>
-          <p className="hero-subtext">
+          <motion.p
+            className="hero-subtext"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+          >
             Tired of ChatGPT and Claude jumping to the bottom or scrolling you out of view during long generations? Lock your screen viewport automatically.
-          </p>
-          <div className="hero-buttons">
-            <a href="#download" className="btn-primary">
+          </motion.p>
+          <motion.div
+            className="hero-buttons"
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <a href="#download" className="btn-primary-shine spring-btn">
               Add to Chrome (Free)
             </a>
-            <a href="#features" className="btn-ghost">
+            <a href="#features" className="btn-hero-ghost spring-btn">
               Explore Features
             </a>
-          </div>
-          <div className="trust-badges">
-            <span>✦ Free Forever</span>
-            <span>✦ No Account Needed</span>
-            <span>✦ Open Source</span>
+          </motion.div>
+
+          <div className="counter-row">
+            <div className="counter-item">
+              <span className="counter-number">
+                <CounterValue target={6} />
+              </span>
+              <span className="counter-label">Platforms Supported</span>
+            </div>
+            <div className="counter-item">
+              <span className="counter-number">
+                <CounterValue target={0} suffix="ms" />
+              </span>
+              <span className="counter-label">Performance Hit</span>
+            </div>
+            <div className="counter-item">
+              <span className="counter-number">
+                <CounterValue target={100} suffix="%" />
+              </span>
+              <span className="counter-label">Free & Open Source</span>
+            </div>
           </div>
         </div>
 
-        <div className="hero-right animate-slide-in-right">
-          <div className="browser-mockup">
-            <div className="browser-header">
-              <div className="browser-dots">
-                <div className="dot dot-red"></div>
-                <div className="dot dot-yellow"></div>
-                <div className="dot dot-green"></div>
+        <div className="hero-right">
+          <div
+            className="interactive-mockup"
+            onMouseEnter={() => setIsHeroMockupHovered(true)}
+            onMouseLeave={() => setIsHeroMockupHovered(false)}
+          >
+            <div className="mockup-reflection"></div>
+            <div className="mockup-header">
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e11d48' }}></div>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }}></div>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e' }}></div>
               </div>
-              <div className="browser-url-bar">chatgpt.com/c/scroll-lock-active</div>
+              <div className="mockup-url-bar">claude.ai/chat/scroll-anchored</div>
             </div>
-            <div className="browser-body">
-              <div className="fake-chat-line" style={{ width: '85%' }}></div>
-              <div className="fake-chat-line" style={{ width: '60%' }}></div>
-              <div className="fake-chat-line tall" style={{ width: '75%' }}></div>
-              <div className="fake-chat-line" style={{ width: '50%' }}></div>
-              <div className="fake-chat-line tall" style={{ width: '80%' }}></div>
-              
-              <button className="floating-chat-btn">
-                <span className="badge-num">9</span>
-                <span className="badge-label">chats</span>
+            <div className="mockup-body">
+              <div className="mockup-chat-bubble user">
+                Can you explain what scroll anchoring does?
+              </div>
+              <div className="mockup-chat-bubble ai">
+                Scroll anchoring locks your screen viewport so manual scroll remains unchanged even if the page structure modifies dynamically...
+              </div>
+
+              <button className="mockup-float-btn">
+                <span style={{ fontWeight: '700', fontSize: '15px' }}>Active</span>
+                <span style={{ fontSize: '8px', opacity: 0.8, textTransform: 'uppercase' }}>scroll fix</span>
               </button>
+
+              {/* Sliding sidebar panel */}
+              <motion.div
+                className="mockup-sidebar"
+                initial={{ x: '100%' }}
+                animate={{ x: isHeroMockupHovered ? 0 : '100%' }}
+                transition={{ type: 'spring', damping: 22, stiffness: 200 }}
+              >
+                <div className="sidebar-title">Recent Chats</div>
+                <div className="sidebar-item">#1 Fix code scrolling</div>
+                <div className="sidebar-item">#2 DeepSeek API lag</div>
+                <div className="sidebar-item">#3 React 19 features</div>
+                <div className="sidebar-item">#4 Anchor scroll css</div>
+              </motion.div>
             </div>
           </div>
         </div>
       </section>
 
       {/* FEATURES SECTION */}
-      <section id="features" className="features-section">
+      <motion.section
+        id="features"
+        className="features-section"
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="section-header">
           <span className="section-tag">Features</span>
           <h2 className="section-title">Engineered for Focus</h2>
@@ -204,24 +371,26 @@ function App() {
 
         <div className="features-grid">
           {features.map((feat, index) => (
-            <motion.div
+            <TiltCard
               key={index}
-              className="feature-card"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-            >
-              <span className="feature-emoji">{feat.emoji}</span>
-              <h3 className="feature-title">{feat.title}</h3>
-              <p className="feature-desc">{feat.desc}</p>
-            </motion.div>
+              emoji={feat.emoji}
+              title={feat.title}
+              desc={feat.desc}
+              index={index}
+            />
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* PLATFORMS SECTION */}
-      <section id="platforms" className="platforms-section">
+      <motion.section
+        id="platforms"
+        className="platforms-section"
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="section-header">
           <span className="section-tag">Compatibility</span>
           <h2 className="section-title">Tested Across All LLMs</h2>
@@ -230,11 +399,22 @@ function App() {
           </p>
         </div>
 
+        {/* Continuous Marquee */}
+        <div className="marquee-container">
+          <div className="marquee-content">
+            {tickerItems.map((item, idx) => (
+              <span key={idx} className="marquee-item">
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+
         <div className="platforms-container">
           {platforms.map((plat, index) => (
             <motion.div
               key={index}
-              className="platform-card"
+              className="platform-card spring-card"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -243,23 +423,36 @@ function App() {
               <h3 className="platform-name">{plat.name}</h3>
               <p className="platform-url">{plat.url}</p>
               <span className="platform-badge">{plat.status}</span>
+              <span className="platform-arrow">↗</span>
             </motion.div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* HOW IT WORKS SECTION */}
-      <section id="how-it-works" className="how-it-works-section">
+      <motion.section
+        id="how-it-works"
+        className="how-it-works-section"
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="section-header">
           <span className="section-tag">How It Works</span>
           <h2 className="section-title">Simple 3-Step Setup</h2>
           <p className="section-subtitle">
-            No complex setups or developers keys needed. Just load the files and start typing.
+            No complex configurations files or APIs. Just install and let it work its magic behind the scenes.
           </p>
         </div>
 
-        <div className="steps-container">
-          <div className="connecting-line"></div>
+        <div className="steps-container" ref={stepsRef}>
+          <motion.div
+            className="connecting-line"
+            initial={{ scaleX: 0 }}
+            animate={isStepsInView ? { scaleX: 1 } : { scaleX: 0 }}
+            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+          />
           {steps.map((step, index) => (
             <motion.div
               key={index}
@@ -269,16 +462,24 @@ function App() {
               viewport={{ once: true }}
               transition={{ delay: index * 0.2, duration: 0.5 }}
             >
-              <div className="step-number">{step.num}</div>
+              <div className="step-number" style={{ animationDelay: `${index * 0.3}s` }}>
+                {step.num}
+              </div>
               <h3 className="step-title">{step.title}</h3>
               <p className="step-desc">{step.desc}</p>
             </motion.div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* DEMO SECTION */}
-      <section className="demo-section">
+      <motion.section
+        className="demo-section"
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="section-header">
           <span className="section-tag">Interactive Preview</span>
           <h2 className="section-title">See The Difference</h2>
@@ -289,49 +490,95 @@ function App() {
 
         <div className="demo-container">
           <div className="demo-mockup">
-            <div className="browser-header">
-              <div className="browser-dots">
-                <div className="dot dot-red"></div>
-                <div className="dot dot-yellow"></div>
-                <div className="dot dot-green"></div>
+            <div className="mockup-header">
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e11d48' }}></div>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }}></div>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e' }}></div>
               </div>
-              <div className="browser-url-bar">extension-controls.local</div>
+              <div className="mockup-url-bar">extension-controls.local</div>
             </div>
-            <div className="browser-body">
-              <div className="fake-chat-line" style={{ width: '85%' }}></div>
-              <div className="fake-chat-line" style={{ width: '50%' }}></div>
-              <div className="fake-chat-line tall" style={{ width: '90%' }}></div>
-              <div className="fake-chat-line" style={{ width: '60%' }}></div>
-              <button className="floating-chat-btn">
-                <span className="badge-num">Active</span>
-                <span className="badge-label">scroll lock</span>
+            <div className="mockup-body">
+              <div className="mockup-chat-bubble user">
+                Is AI Scroll Fix going to slow down my Chrome tabs?
+              </div>
+              <div className="mockup-chat-bubble ai">
+                Absolutely not. The core listener only triggers on DOM updates, taking less than 1ms to recalculate layout anchors. Safe, secure, and extremely light...
+                <span className="blinking-cursor"></span>
+              </div>
+              <button className="mockup-float-btn">
+                <span style={{ fontWeight: '700', fontSize: '15px' }}>Active</span>
+                <span style={{ fontSize: '8px', opacity: 0.8, textTransform: 'uppercase' }}>scroll lock</span>
               </button>
             </div>
           </div>
 
-          <div className="demo-mockup">
-            <div className="browser-header">
-              <div className="browser-dots">
-                <div className="dot dot-red"></div>
-                <div className="dot dot-yellow"></div>
-                <div className="dot dot-green"></div>
+          <div className="demo-mockup demo-mockup-delay">
+            <div className="mockup-header">
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e11d48' }}></div>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }}></div>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e' }}></div>
               </div>
-              <div className="browser-url-bar">history-panel.local</div>
+              <div className="mockup-url-bar">history-panel.local</div>
             </div>
-            <div className="browser-body">
-              <div className="chat-list">
-                <div className="chat-list-item">#1 How do I fix scrolling jumps in ChatGPT?</div>
-                <div className="chat-list-item">#2 Can you write a CSS fix for scroll anchoring?</div>
-                <div className="chat-list-item">#3 What is the best browser for Chrome extensions?</div>
-                <div className="chat-list-item">#4 Explain quantum computing scroll lock algorithms.</div>
+            <div className="mockup-body">
+              <div className="chat-history-list">
+                <motion.div
+                  className="chat-history-item"
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <span>#1 How do I fix scrolling jumps in ChatGPT?</span>
+                  <span>↗</span>
+                </motion.div>
+                <motion.div
+                  className="chat-history-item"
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <span>#2 Can you write a CSS fix for scroll anchoring?</span>
+                  <span>↗</span>
+                </motion.div>
+                <motion.div
+                  className="chat-history-item"
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <span>#3 What is the best browser for Chrome extensions?</span>
+                  <span>↗</span>
+                </motion.div>
+                <motion.div
+                  className="chat-history-item"
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <span>#4 Explain quantum computing scroll lock algorithms.</span>
+                  <span>↗</span>
+                </motion.div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* FAQ SECTION */}
-      <section id="faq" className="faq-section">
+      <motion.section
+        id="faq"
+        className="faq-section"
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="section-header">
           <span className="section-tag">FAQ</span>
           <h2 className="section-title">Common Questions</h2>
@@ -355,7 +602,7 @@ function App() {
                     className="faq-chevron"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2"
+                    strokeWidth="2.5"
                     viewBox="0 0 24 24"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -380,15 +627,42 @@ function App() {
             )
           })}
         </div>
-      </section>
+      </motion.section>
 
       {/* FOOTER CTA */}
       <footer id="download" className="footer-cta">
-        <h2 className="footer-heading">Fix your scrolling once and for all.</h2>
-        <a href="#" className="btn-primary btn-large">
+        <h2 className="footer-heading">
+          Ready to Fix Your <span className="glow-text">AI Scrolling?</span>
+        </h2>
+        <a href="#" className="btn-primary-shine btn-large spring-btn">
           Add to Chrome (Free)
         </a>
         <div className="footer-note">Works on Chrome, Brave, Edge, and Opera.</div>
+
+        {/* Floating tech icons */}
+        <FaChrome className="floating-icon floating-icon-1" />
+        <FaLock className="floating-icon floating-icon-2" />
+        <FaCode className="floating-icon floating-icon-3" />
+
+        {/* Particle dots */}
+        {particleDots.map((dot) => (
+          <div
+            key={dot.id}
+            style={{
+              position: 'absolute',
+              top: dot.top,
+              left: dot.left,
+              width: dot.size,
+              height: dot.size,
+              borderRadius: '50%',
+              backgroundColor: 'rgba(225, 29, 72, 0.4)',
+              animation: `float ${dot.duration} ease-in-out infinite`,
+              animationDelay: dot.delay,
+              pointerEvents: 'none'
+            }}
+          />
+        ))}
+
         <div className="footer-line">
           © 2025 AI Scroll Fix — Built for the AI generation
         </div>

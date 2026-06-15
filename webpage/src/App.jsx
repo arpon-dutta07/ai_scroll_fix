@@ -3,6 +3,44 @@ import { motion, AnimatePresence, useInView } from 'framer-motion'
 import { FaChrome, FaCode, FaLock } from 'react-icons/fa'
 import './App.css'
 
+// Brand-specific outline SVG logos
+const brandLogos = {
+  chatgpt: (
+    <svg className="platform-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2a10 10 0 0110 10c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2z" />
+      <path d="M12 6v12M6 12h12M7.75 7.75l8.5 8.5M7.75 16.25l8.5-8.5" />
+    </svg>
+  ),
+  claude: (
+    <svg className="platform-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="M8 11h8M12 8v6" />
+    </svg>
+  ),
+  gemini: (
+    <svg className="platform-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v18M3 12h18M12 3l3.5 5.5L21 12l-5.5 3.5L12 21l-3.5-5.5L3 12l5.5-3.5z" />
+    </svg>
+  ),
+  deepseek: (
+    <svg className="platform-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+    </svg>
+  ),
+  perplexity: (
+    <svg className="platform-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" />
+      <path d="M21 21l-4.3-4.3M11 8a3 3 0 000 6" />
+    </svg>
+  ),
+  huggingface: (
+    <svg className="platform-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 22a10 10 0 100-20 10 10 0 000 20z" />
+      <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" strokeWidth="3" />
+    </svg>
+  )
+};
+
 // Helper component for smooth number count up animation
 const CounterValue = ({ target, suffix }) => {
   const [value, setValue] = useState(0)
@@ -247,12 +285,12 @@ function App() {
   ]
 
   const platforms = [
-    { name: 'ChatGPT', url: 'chatgpt.com', status: 'Active' },
-    { name: 'Claude AI', url: 'claude.ai', status: 'Active' },
-    { name: 'Gemini', url: 'gemini.google.com', status: 'Active' },
-    { name: 'DeepSeek', url: 'chat.deepseek.com', status: 'Active' },
-    { name: 'Perplexity', url: 'perplexity.ai', status: 'Active' },
-    { name: 'Hugging Chat', url: 'huggingface.co/chat', status: 'Active' }
+    { name: 'ChatGPT', url: 'chatgpt.com', status: 'Active', id: 'chatgpt' },
+    { name: 'Claude AI', url: 'claude.ai', status: 'Active', id: 'claude' },
+    { name: 'Gemini', url: 'gemini.google.com', status: 'Active', id: 'gemini' },
+    { name: 'DeepSeek', url: 'chat.deepseek.com', status: 'Active', id: 'deepseek' },
+    { name: 'Perplexity', url: 'perplexity.ai', status: 'Active', id: 'perplexity' },
+    { name: 'Hugging Chat', url: 'huggingface.co/chat', status: 'Active', id: 'huggingface' }
   ]
 
   const tickerItems = [
@@ -512,15 +550,24 @@ function App() {
           {platforms.map((plat, index) => (
             <motion.div
               key={index}
-              className="platform-card spring-card"
+              className={`platform-card plat-${plat.id} spring-card`}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.08, duration: 0.5 }}
             >
+              <div className="platform-card-glow-bg"></div>
+              <div className="platform-icon-wrapper">
+                {brandLogos[plat.id]}
+              </div>
               <h3 className="platform-name">{plat.name}</h3>
               <p className="platform-url">{plat.url}</p>
-              <span className="platform-badge">{plat.status}</span>
+              
+              <div className="platform-badge-row">
+                <span className="platform-status-dot"></span>
+                <span className="platform-badge-text">{plat.status}</span>
+              </div>
+              
               <span className="platform-arrow">↗</span>
             </motion.div>
           ))}
@@ -546,27 +593,85 @@ function App() {
 
         <div className="steps-container" ref={stepsRef}>
           <motion.div
-            className="connecting-line"
+            className="connecting-line neon-pipeline"
             initial={{ scaleX: 0 }}
             animate={isStepsInView ? { scaleX: 1 } : { scaleX: 0 }}
             transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
           />
-          {steps.map((step, index) => (
-            <motion.div
-              key={index}
-              className="step-box"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.2, duration: 0.5 }}
-            >
-              <div className="step-number" style={{ animationDelay: `${index * 0.3}s` }}>
-                {step.num}
-              </div>
-              <h3 className="step-title">{step.title}</h3>
-              <p className="step-desc">{step.desc}</p>
-            </motion.div>
-          ))}
+          {steps.map((step, index) => {
+            // Render specific mock interactive widget for each step
+            let widgetContent = null;
+            if (index === 0) {
+              widgetContent = (
+                <div className="mock-widget install-widget">
+                  <div className="browser-header-row">
+                    <span className="browser-icon-chrome"></span>
+                    <span className="browser-url-text">chrome://store</span>
+                  </div>
+                  <div className="browser-content-box">
+                    <div className="extension-avatar-circle">
+                      <div className="logo-dot small-dot"></div>
+                    </div>
+                    <div className="extension-action-button-sim">
+                      <span>Add to Chrome</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            } else if (index === 1) {
+              widgetContent = (
+                <div className="mock-widget tabs-widget">
+                  <div className="mock-tab active-tab">
+                    <span className="tab-bullet purple"></span>
+                    <span>claude.ai</span>
+                  </div>
+                  <div className="mock-tab">
+                    <span className="tab-bullet green"></span>
+                    <span>chatgpt</span>
+                  </div>
+                  <div className="mock-tab">
+                    <span className="tab-bullet blue"></span>
+                    <span>gemini</span>
+                  </div>
+                </div>
+              );
+            } else if (index === 2) {
+              widgetContent = (
+                <div className="mock-widget lock-status-widget">
+                  <div className="visual-lock-ring">
+                    <div className="padlock-icon">🔒</div>
+                    <div className="sonar-ring"></div>
+                  </div>
+                  <div className="locked-badge-indicator">SCROLL RESTORED</div>
+                </div>
+              );
+            }
+
+            return (
+              <motion.div
+                key={index}
+                className="step-card-box spring-card"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.2, duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
+              >
+                <div className="step-card-inner">
+                  <div className="step-number-badge">
+                    {step.num}
+                  </div>
+                  
+                  {/* Visual Widget representation */}
+                  <div className="step-card-visual-container">
+                    {widgetContent}
+                  </div>
+
+                  <h3 className="step-title">{step.title}</h3>
+                  <p className="step-desc">{step.desc}</p>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </motion.section>
 

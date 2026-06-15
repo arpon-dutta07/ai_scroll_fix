@@ -87,6 +87,10 @@ function App() {
   const [activeFaqIndex, setActiveFaqIndex] = useState(null)
   const [isHeroMockupHovered, setIsHeroMockupHovered] = useState(false)
 
+  const toggleFaq = (index) => {
+    setActiveFaqIndex(activeFaqIndex === index ? null : index);
+  };
+
   // Refs for scroll-trigger animations
   const stepsRef = useRef(null)
   const isStepsInView = useInView(stepsRef, { once: true, amount: 0.2 })
@@ -579,53 +583,105 @@ function App() {
         viewport={{ once: true, amount: 0.1 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="section-header">
-          <span className="section-tag">FAQ</span>
-          <h2 className="section-title">Common Questions</h2>
-          <p className="section-subtitle">
-            Everything you need to know about the extension, privacy, and compatibility.
-          </p>
-        </div>
+        <div className="faq-container-grid">
+          {/* LEFT COLUMN: Sticky Info & Live Stats */}
+          <div className="faq-info-panel">
+            <span className="section-tag">FAQ</span>
+            <h2 className="section-title">Common Questions</h2>
+            <p className="section-subtitle">
+              Everything you need to know about the extension, privacy, and compatibility.
+            </p>
 
-        <div className="faq-accordion">
-          {faqs.map((faq, index) => {
-            const isOpen = activeFaqIndex === index
-            return (
-              <div
-                key={index}
-                className={`faq-item ${isOpen ? 'open' : ''}`}
-                onClick={() => toggleFaq(index)}
-              >
-                <div className="faq-question">
-                  {faq.question}
-                  <svg
-                    className="faq-chevron"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
+            {/* Premium Extension Status Hub Widget */}
+            <div className="faq-status-widget glass-card">
+              <div className="widget-header">
+                <div className="status-indicator-wrapper">
+                  <span className="status-pulse-dot"></span>
+                  <span className="status-label">Extension Status: Active</span>
                 </div>
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className="faq-answer"
-                    >
-                      <div className="faq-answer-inner">
-                        {faq.answer}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <span className="widget-version">v1.2.0</span>
               </div>
-            )
-          })}
+
+              <div className="widget-metrics">
+                <div className="metric-item">
+                  <div className="metric-val">0ms</div>
+                  <div className="metric-lbl">Scroll Lag</div>
+                </div>
+                <div className="metric-item">
+                  <div className="metric-val">100%</div>
+                  <div className="metric-lbl">Privacy Assured</div>
+                </div>
+                <div className="metric-item">
+                  <div className="metric-val">5★</div>
+                  <div className="metric-lbl">User Rating</div>
+                </div>
+              </div>
+
+              <div className="widget-footer">
+                <span className="widget-secure-icon">🛡️</span>
+                <span className="widget-secure-text">Fully sandboxed. Zero remote connections.</span>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Redesigned FAQ Accordion */}
+          <div className="faq-accordion-panel">
+            <div className="faq-accordion">
+              {faqs.map((faq, index) => {
+                const isOpen = activeFaqIndex === index;
+                // Category determination
+                let category = "TECH";
+                if (index === 1) category = "PRIVACY";
+                if (index === 2) category = "CONTROLS";
+                if (index === 3) category = "PLATFORMS";
+
+                return (
+                  <div
+                    key={index}
+                    className={`faq-item-card ${isOpen ? 'active-open' : ''}`}
+                    onClick={() => toggleFaq(index)}
+                  >
+                    <div className="faq-card-glow-border"></div>
+                    <div className="faq-item-header">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span className={`faq-card-tag tag-${category.toLowerCase()}`}>{category}</span>
+                        <h3 className="faq-question-text">
+                          {faq.question}
+                        </h3>
+                      </div>
+                      <div className="faq-chevron-wrapper">
+                        <svg
+                          className="faq-chevron-svg"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
+                          className="faq-answer-container"
+                        >
+                          <div className="faq-answer-text">
+                            {faq.answer}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </motion.section>
 

@@ -19,17 +19,24 @@
     return lum < 128 ? 'dark' : 'light';
   }
 
-  function getColors() {
-    if (getTheme() === 'dark') {
-      return { bg: 'linear-gradient(135deg,#e11d48,#be123c)', shadow: '0 0 20px rgba(225,29,72,0.7)' };
+  function updateThemeClass() {
+    if (!panel || !btn) return;
+    var theme = getTheme();
+    if (theme === 'dark') {
+      panel.className = 'asf-dark';
+      btn.className = 'asf-dark';
+    } else {
+      panel.className = 'asf-light';
+      btn.className = 'asf-light';
     }
-    return { bg: 'linear-gradient(135deg,#2563eb,#1d4ed8)', shadow: '0 0 20px rgba(37,99,235,0.7)' };
   }
 
   function injectStyles() {
     var style = document.createElement('style');
     style.id = 'asf-styles';
     style.innerHTML = `
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
       /* Hide native ChatGPT timeline ticks, scroll markers, or conflicting scroll extensions */
       .chatgpt-timeline-ticks, 
       .scroll-marker, 
@@ -55,6 +62,254 @@
       }
       ::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.3) !important;
+      }
+
+      /* Premium UI Theme CSS Variables */
+      #asf-panel, #asf-btn, #asf-panel * {
+        font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        box-sizing: border-box;
+      }
+
+      #asf-panel.asf-dark, #asf-btn.asf-dark {
+        --asf-panel-bg: rgba(15, 15, 25, 0.72);
+        --asf-item-bg: rgba(255, 255, 255, 0.04);
+        --asf-item-border: rgba(255, 255, 255, 0.05);
+        --asf-item-hover-bg: rgba(255, 255, 255, 0.08);
+        --asf-item-hover-border: rgba(255, 255, 255, 0.15);
+        --asf-text-color: rgba(255, 255, 255, 0.85);
+        --asf-text-hover-color: #ffffff;
+        --asf-border: rgba(255, 255, 255, 0.08);
+        --asf-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+        --asf-highlight-outline: #8b5cf6;
+        --asf-highlight-bg: rgba(139, 92, 246, 0.08);
+      }
+
+      #asf-panel.asf-light, #asf-btn.asf-light {
+        --asf-panel-bg: rgba(255, 255, 255, 0.82);
+        --asf-item-bg: rgba(0, 0, 0, 0.03);
+        --asf-item-border: rgba(0, 0, 0, 0.05);
+        --asf-item-hover-bg: rgba(0, 0, 0, 0.06);
+        --asf-item-hover-border: rgba(0, 0, 0, 0.12);
+        --asf-text-color: rgba(0, 0, 0, 0.75);
+        --asf-text-hover-color: #000000;
+        --asf-border: rgba(0, 0, 0, 0.08);
+        --asf-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
+        --asf-highlight-outline: #3b82f6;
+        --asf-highlight-bg: rgba(59, 130, 246, 0.08);
+      }
+
+      /* Moving gradient background for the floating button */
+      @keyframes asf-gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      #asf-btn {
+        position: fixed;
+        bottom: 90px;
+        right: 24px;
+        width: 60px;
+        height: 60px;
+        border-radius: 18px;
+        z-index: 2147483647;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: linear-gradient(-45deg, #ff3366, #ff6633, #8b5cf6, #3b82f6);
+        background-size: 300% 300%;
+        animation: asf-gradient-shift 8s ease infinite;
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+      }
+
+      #asf-btn:hover {
+        transform: scale(1.08) translateY(-3px);
+        box-shadow: 0 12px 30px rgba(139, 92, 246, 0.6), 0 0 15px rgba(255, 51, 102, 0.3);
+      }
+
+      #asf-btn:active {
+        transform: scale(0.95);
+      }
+
+      #asf-num {
+        font-size: 24px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      }
+
+      #asf-label {
+        font-size: 9px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.85);
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+
+      /* Glassmorphism Navigation Panel */
+      #asf-panel {
+        position: fixed;
+        right: 96px;
+        bottom: 75px;
+        width: 310px;
+        max-height: 60vh;
+        overflow-y: hidden;
+        background: var(--asf-panel-bg);
+        backdrop-filter: blur(20px) saturate(160%);
+        -webkit-backdrop-filter: blur(20px) saturate(160%);
+        border: 1px solid var(--asf-border);
+        border-radius: 20px;
+        padding: 14px;
+        z-index: 2147483646;
+        box-shadow: var(--asf-shadow), inset 0 1px 0 rgba(255,255,255,0.05);
+        transform: scale(0.9) translateY(20px);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #asf-panel.show {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Fixed Header */
+      .asf-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 2px 6px 12px 6px;
+        border-bottom: 1px solid var(--asf-item-border);
+        margin-bottom: 10px;
+        flex-shrink: 0;
+      }
+
+      .asf-header-title {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        color: var(--asf-text-color);
+      }
+
+      .asf-header-badge {
+        font-size: 11px;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #ff3366, #8b5cf6);
+        color: white;
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+      }
+
+      /* Scrollable List */
+      .asf-list {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 2px;
+      }
+
+      /* Custom scrollbar inside the list */
+      .asf-list::-webkit-scrollbar {
+        width: 6px !important;
+      }
+      .asf-list::-webkit-scrollbar-track {
+        background: transparent !important;
+      }
+      .asf-list::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.12) !important;
+        border-radius: 10px !important;
+      }
+      .asf-list::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.25) !important;
+      }
+
+      /* List Items Staggered slide in animation */
+      @keyframes asf-slide-in {
+        0% { opacity: 0; transform: translateY(12px) scale(0.95); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+      }
+
+      .asf-item {
+        position: relative;
+        padding: 10px 14px;
+        color: var(--asf-text-color);
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: 12px;
+        cursor: pointer;
+        margin-bottom: 6px;
+        background: var(--asf-item-bg);
+        border: 1px solid var(--asf-item-border);
+        line-height: 1.5;
+        word-break: break-word;
+        transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+        animation: asf-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      .asf-item:hover {
+        color: var(--asf-text-hover-color);
+        background: var(--asf-item-hover-bg);
+        border-color: var(--asf-item-hover-border);
+        transform: translateX(-4px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      }
+
+      .asf-item:active {
+        transform: scale(0.97) translateX(-4px);
+      }
+
+      .asf-item-index {
+        background: linear-gradient(135deg, #ff3366, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+        margin-right: 4px;
+      }
+
+      .asf-empty {
+        padding: 24px;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 13px;
+        text-align: center;
+        line-height: 1.6;
+      }
+
+      .asf-empty-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      /* Hover highlight outline on target chat elements */
+      .asf-highlight-active {
+        outline: 2px dashed #8b5cf6 !important;
+        outline-offset: 4px !important;
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.2) !important;
+        transition: outline 0.2s ease, box-shadow 0.2s ease, outline-offset 0.2s ease !important;
+      }
+
+      /* Target scroll animations */
+      @keyframes asf-pulse-glow {
+        0% { outline-color: var(--asf-highlight-outline); box-shadow: 0 0 0px rgba(139,92,246,0); }
+        50% { outline-color: var(--asf-highlight-outline); box-shadow: 0 0 20px var(--asf-highlight-outline); background-color: var(--asf-highlight-bg); }
+        100% { outline-color: var(--asf-highlight-outline); box-shadow: 0 0 0px rgba(139,92,246,0); }
+      }
+
+      .asf-scroll-target {
+        transition: all 0.5s ease !important;
+        outline: 3px solid var(--asf-highlight-outline) !important;
+        outline-offset: 4px !important;
+        border-radius: 8px !important;
+        animation: asf-pulse-glow 1.5s ease-in-out !important;
       }
     `;
     document.head.appendChild(style);
@@ -554,26 +809,13 @@
   function scrollToElement(el) {
     if (!el) return;
     try {
-      var oldTransition = el.style.transition;
-      var oldOutline = el.style.outline;
-      var oldBg = el.style.backgroundColor;
-      var oldBoxShadow = el.style.boxShadow;
-      
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       
       setTimeout(function() {
-        el.style.transition = 'all 0.4s ease';
-        el.style.outline = '3px solid #e11d48';
-        el.style.boxShadow = '0 0 15px rgba(225,29,72,0.6)';
-        el.style.backgroundColor = 'rgba(225,29,72,0.1)';
+        el.classList.add('asf-scroll-target');
         
         setTimeout(function() {
-          el.style.outline = oldOutline;
-          el.style.boxShadow = oldBoxShadow;
-          el.style.backgroundColor = oldBg;
-          setTimeout(function() {
-            el.style.transition = oldTransition;
-          }, 400);
+          el.classList.remove('asf-scroll-target');
         }, 1500);
       }, 300);
     } catch(e) {
@@ -639,49 +881,52 @@
   }
 
   function createBtn() {
-    var c = getColors();
     btn = document.createElement('div');
     btn.id = 'asf-btn';
-    btn.style.cssText = 'position:fixed;bottom:90px;right:24px;width:56px;height:56px;border-radius:16px;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:none;transition:all 0.3s ease;';
-    btn.style.background = c.bg;
-    btn.style.boxShadow = c.shadow;
-    btn.innerHTML = '<span id="asf-num" style="font-size:22px;font-weight:800;color:white;line-height:1">0</span><span style="font-size:9px;color:white;opacity:0.75;margin-top:2px">chats</span>';
+    btn.innerHTML = '<span id="asf-num">0</span><span id="asf-label">chats</span>';
     document.body.appendChild(btn);
   }
 
   function createPanel() {
     panel = document.createElement('div');
     panel.id = 'asf-panel';
-    panel.style.cssText = 'position:fixed;right:88px;bottom:70px;width:280px;max-height:55vh;overflow-y:auto;background:#1a1a2e;border-radius:14px;padding:10px;z-index:2147483646;box-shadow:0 8px 32px rgba(0,0,0,0.6);transform:translateX(320px);opacity:0;pointer-events:none;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s ease;';
     document.body.appendChild(panel);
   }
 
   function hidePanel() {
     if (!panel) return;
     if (isOverBtn || isOverPanel) return;
-    panel.style.transform = 'translateX(320px)';
-    panel.style.opacity = '0';
-    panel.style.pointerEvents = 'none';
+    panel.classList.remove('show');
   }
 
   function showPanel() {
     if (!panel) return;
     scanMessages();
+    updateThemeClass();
     panel.innerHTML = '';
 
     if (allMessages.length === 0) {
       var empty = document.createElement('div');
-      empty.style.cssText = 'padding:12px;color:rgba(255,255,255,0.5);font-size:12px;text-align:center;line-height:1.6;';
-      empty.innerText = 'No messages found.\nTry scrolling the chat first.';
+      empty.className = 'asf-empty';
+      empty.innerHTML = '<span class="asf-empty-icon">💬</span>No messages found.<br>Try scrolling the chat first.';
       panel.appendChild(empty);
     } else {
+      // Create fixed header
+      var header = document.createElement('div');
+      header.className = 'asf-header';
+      header.innerHTML = '<span class="asf-header-title">Chat Navigation</span><span class="asf-header-badge">' + allMessages.length + '</span>';
+      panel.appendChild(header);
+
+      // Create scrollable list
+      var listContainer = document.createElement('div');
+      listContainer.className = 'asf-list';
+
       allMessages.forEach(function(m, i) {
         var d = document.createElement('div');
-        d.style.cssText = 'padding:8px 10px;color:white;font-size:12px;border-radius:8px;cursor:pointer;margin-bottom:4px;background:rgba(255,255,255,0.05);line-height:1.4;word-break:break-word;transition:background 0.2s ease;';
-        d.innerText = '#' + (i + 1) + ' \u2014 ' + truncateText(m.text, 65);
+        d.className = 'asf-item';
+        d.style.animationDelay = (i * 0.03) + 's';
+        d.innerHTML = '<span class="asf-item-index">#' + (i + 1) + '</span> ' + truncateText(m.text, 65);
         d.title = m.text;
-        d.addEventListener('mouseover', function() { d.style.background = 'rgba(255,255,255,0.15)'; });
-        d.addEventListener('mouseout', function() { d.style.background = 'rgba(255,255,255,0.05)'; });
         
         (function(item) {
           d.addEventListener('click', function() {
@@ -696,29 +941,25 @@
           d.addEventListener('mouseenter', function() {
             var targetEl = resolveElement(item);
             if (targetEl) {
-              targetEl.setAttribute('data-asf-highlight', 'true');
-              targetEl.style.outline = '2px dashed ' + (getTheme() === 'dark' ? '#e11d48' : '#2563eb');
-              targetEl.style.outlineOffset = '2px';
+              targetEl.classList.add('asf-highlight-active');
             }
           });
           
           d.addEventListener('mouseleave', function() {
             var targetEl = resolveElement(item);
             if (targetEl) {
-              targetEl.removeAttribute('data-asf-highlight');
-              targetEl.style.outline = '';
-              targetEl.style.outlineOffset = '';
+              targetEl.classList.remove('asf-highlight-active');
             }
           });
         })(m);
         
-        panel.appendChild(d);
+        listContainer.appendChild(d);
       });
+
+      panel.appendChild(listContainer);
     }
 
-    panel.style.transform = 'translateX(0)';
-    panel.style.opacity = '1';
-    panel.style.pointerEvents = 'auto';
+    panel.classList.add('show');
   }
 
   function initPlatform() {
@@ -774,6 +1015,7 @@
     injectStyles();
     createBtn();
     createPanel();
+    updateThemeClass();
     initPlatform();
     startObserver();
 

@@ -314,7 +314,7 @@ function App() {
           <a href="#faq" className="nav-link" onClick={() => setIsMenuOpen(false)}>FAQ</a>
         </div>
 
-        <a href="#download" className="navbar-cta spring-btn">
+        <a href="/ai-scroll-fix.zip" download className="navbar-cta spring-btn">
           Download Extension
         </a>
       </nav>
@@ -361,7 +361,7 @@ function App() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.8, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            <a href="#download" className="btn-primary-shine spring-btn">
+            <a href="/ai-scroll-fix.zip" download className="btn-primary-shine spring-btn">
               Add to Chrome (Free)
             </a>
             <a href="#features" className="btn-hero-ghost spring-btn">
@@ -1082,7 +1082,7 @@ function App() {
         <h2 className="footer-heading">
           Ready to Fix Your <span className="glow-text">AI Scrolling?</span>
         </h2>
-        <a href="#" className="btn-primary-shine btn-large spring-btn">
+        <a href="/ai-scroll-fix.zip" download className="btn-primary-shine btn-large spring-btn">
           Add to Chrome (Free)
         </a>
         <div className="footer-note">Works on Chrome, Brave, Edge, and Opera.</div>

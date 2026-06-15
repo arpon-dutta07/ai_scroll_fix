@@ -1,7 +1,6 @@
 # 🔧 AI Scroll Fix — All Platforms
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-v1.2.0-red?style=for-the-badge&logo=google-chrome&logoColor=white)](https://chrome.google.com/webstore)
-[![License: MIT](https://img.shields.io/badge/License-MIT-rose?style=for-the-badge)](LICENSE)
 [![Built with React](https://img.shields.io/badge/Built_with-React_19-blue?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
 [![Vite Build](https://img.shields.io/badge/Vite-Built-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev)
 
@@ -103,8 +102,3 @@ The extension injects `content.js` at `document_idle`. It performs the following
     ```
     And adds an `.asf-highlighted` glow effect to focus your attention.
 
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE). Feel free to fork, modify, and distribute!
